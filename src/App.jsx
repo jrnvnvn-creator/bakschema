@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 
 const TYPES = {
-  beide:    { label: "Beide",    ink: "#8C7B63", tint: "#EDE7DB", node: "#8C7B63" },
+  beide:    { label: "Alle",     ink: "#8C7B63", tint: "#EDE7DB", node: "#8C7B63" },
   boule:    { label: "Boules",   ink: "#B15511", tint: "#F5E6D2", node: "#B15511" },
   volkoren: { label: "Volkoren", ink: "#6B4A2B", tint: "#E7DBC9", node: "#6B4A2B" },
   pita:     { label: "Pita's",   ink: "#C0872E", tint: "#F2E6C8", node: "#C0872E" },
@@ -72,7 +72,7 @@ const STEPS = [
   { id: "s8",  cluster: "bake", type: "boule",    title: "Eindvorm → banneton (naad boven)",
     note: "Kamertemp. Poke-test: veert traag terug = rijp.",
     detail: "Boule vormen: draai de voorgevormde bal om (gladde kant onder). Vouw de vier randen strak naar het midden en druk aan, draai dan om zodat de naad onder ligt. Spanning opbouwen: sleep de bal met beide handen of de deegsteker in kleine draaiende bewegingen naar je toe over het (nauwelijks bebloemde) blad — de onderkant 'pakt' het werkblad en trekt de bovenhuid strak en glad. Scheurt hij? Te veel spanning of een te droge huid. Glijdt hij weg? Te veel bloem eronder. Volkoren voelt door de zemelen iets minder elastisch — wees wat zachter. Leg met de naad BOVEN in een met rijstebloem bestoven banneton. Poke-test: veert ~¾ langzaam terug = rijp." },
-  { id: "s9",  cluster: "bake", type: "beide",    title: "Oven voorverwarmen 250 °C",
+  { id: "s9",  cluster: "bake", type: "beide", fullWidth: true, title: "Oven voorverwarmen 250 °C",
     note: "Dutch oven of steamoven mee opwarmen (~45–60 min).",
     detail: "Verwarm de oven mét de gietijzeren pan of baksteen 45–60 min voor op 250 °C. Die massa moet écht gloeiend heet zijn — dat geeft de ovenveer. Steamoven: zet 100 % stoom klaar voor de eerste fase." },
   { id: "s10", cluster: "bake", type: "focaccia", title: "Focaccia dimpelen + pekel + topping",
@@ -136,6 +136,43 @@ const fmtDur = (mins) => {
   return `${h} u ${mm} min`;
 };
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+const round15 = (m) => Math.round(m / 15) * 15;
+const two = (n) => String(n).padStart(2, "0");
+const fmtClock = (ms) => { const s = Math.max(0, Math.ceil(ms / 1000)); return two(Math.floor(s / 60)) + ":" + two(s % 60); };
+const seasonTemp = () => { const m = new Date().getMonth(); if (m === 11 || m <= 1) return 18; if (m >= 2 && m <= 4) return 20; if (m >= 5 && m <= 7) return 26; return 20; };
+const fmtDate = (iso) => { try { return new Date(iso).toLocaleString("nl-NL", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }); } catch (e) { return iso; } };
+const HYD_DEFAULT = { boule: 78, volkoren: 82, focaccia: 74, pita: 65 };
+
+// Actie-categorieën per stap (voor iconen in de tijdlijn)
+const ACT_OF = {
+  s1: "mix", s2: "mix", s3: "fold", s4: "fridge",
+  w1: "mix", w2: "rest", w3: "fridge",
+  s5: "take", s6: "take", s7: "shape", s8: "shape", s9: "device", s10: "shape", s11: "bake", s12: "bake",
+  pp: "device", p1: "take", p2: "shape", p3: "shape", p4: "rest", p5: "bake",
+  w4: "take", w5: "shape", w6: "rest", w7: "bake",
+};
+const ACT_META = { take: "Uit de koeling / bijkomen", mix: "Mengen / kneden", fold: "Vouwen (folds)", fridge: "Koelkast (koude bulk)", rest: "Rijzen / wachten", shape: "Vormen", device: "Apparaat aan", bake: "Bakken" };
+const ACT_COLOR = { take: "#C58A5A", mix: "#B0863A", fold: "#7E6BB0", fridge: "#3E9BC0", rest: "#9A8F7E", shape: "#6E8F3A", device: "#5B6E8A", bake: "#D64530" };
+const ACT_LEGEND = ["take", "mix", "fold", "fridge", "rest", "shape", "device", "bake"];
+const LANE_ORDER = ["focaccia", "boule", "volkoren", "pita", "worst"]; // focaccia links
+const LANE_PREFIX = { boule: ["Boules:"], volkoren: ["Volkoren:"], focaccia: ["Focaccia:"], pita: ["Pita's:"] };
+function ClockIcon() {
+  return <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ verticalAlign: "-2px", marginRight: "5px" }}><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>;
+}
+function ActIcon({ a }) {
+  const c = { fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round" };
+  const paths = {
+    take: <path d="M14 14.76V5a2 2 0 1 0-4 0v9.76a4 4 0 1 0 4 0z" />,
+    mix: <><path d="M4 11h16" /><path d="M5 11a7 7 0 0 0 14 0" /><path d="M15 11l2-6" /></>,
+    fold: <><path d="M17 2l4 4-4 4" /><path d="M3 11V9a4 4 0 0 1 4-4h14" /><path d="M7 22l-4-4 4-4" /><path d="M21 13v2a4 4 0 0 1-4 4H3" /></>,
+    fridge: <><path d="M12 2v20" /><path d="M2 12h20" /><path d="M5 5l14 14" /><path d="M19 5L5 19" /></>,
+    rest: <><path d="M6 2h12" /><path d="M6 22h12" /><path d="M6 2c0 4 3 6 6 10 3-4 6-6 6-10" /><path d="M6 22c0-4 3-6 6-10 3 4 6 6 6 10" /></>,
+    shape: <><circle cx="12" cy="12" r="5" /><path d="M4 8V5a1 1 0 0 1 1-1h3" /><path d="M20 8V5a1 1 0 0 0-1-1h-3" /><path d="M4 16v3a1 1 0 0 0 1 1h3" /><path d="M20 16v3a1 1 0 0 1-1 1h-3" /></>,
+    device: <><path d="M12 2v10" /><path d="M18.4 6.6a9 9 0 1 1-12.8 0" /></>,
+    bake: <path d="M12 3s5 4 5 9a5 5 0 0 1-10 0c0-2 1-3.5 2.5-5C10 9 11 7 12 3z" />,
+  };
+  return <svg viewBox="0 0 24 24" width="13" height="13" {...c}>{paths[a] || paths.take}</svg>;
+}
 
 export default function BakeSchedule() {
   const [boules, setBoules] = useState(2);
@@ -156,6 +193,28 @@ export default function BakeSchedule() {
   const [filter, setFilter] = useState("alles");
   const [loaded, setLoaded] = useState(false);
   const [showIng, setShowIng] = useState(false);
+  const [foldT, setFoldT] = useState({ started: false, currentFold: 1, target: null, phase: "idle" });
+  const [nowTs, setNowTs] = useState(Date.now());
+  const vibratedFor = useRef(null);
+  const FOLDS = 4;
+  const [sessions, setSessions] = useState([]);
+  const [showLog, setShowLog] = useState(false);
+  const [showSavePanel, setShowSavePanel] = useState(false);
+  const [sessionNotes, setSessionNotes] = useState({});
+  const [savedFlash, setSavedFlash] = useState(false);
+  const [notifOn, setNotifOn] = useState(false);
+  const [showLegend, setShowLegend] = useState(false);
+  const promptedRef = useRef(false);
+
+  // scherm aan houden zolang de app open is
+  useEffect(() => {
+    let lock = null;
+    const request = async () => { try { if (navigator.wakeLock) lock = await navigator.wakeLock.request("screen"); } catch (e) {} };
+    request();
+    const onVis = () => { if (document.visibilityState === "visible") request(); };
+    document.addEventListener("visibilitychange", onVis);
+    return () => { document.removeEventListener("visibilitychange", onVis); try { lock && lock.release(); } catch (e) {} };
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -178,6 +237,9 @@ export default function BakeSchedule() {
             if (v.nights) setNights(v.nights);
             if (v.startStr) setStartStr(v.startStr);
             if (v.temp) setTemp(v.temp);
+            if (v.foldT) setFoldT(v.foldT);
+            if (Array.isArray(v.sessions)) setSessions(v.sessions);
+            if (typeof v.notifOn === "boolean") setNotifOn(v.notifOn);
           }
         }
       } catch (e) {}
@@ -190,15 +252,54 @@ export default function BakeSchedule() {
     (async () => {
       try {
         if (typeof window !== "undefined") {
-          store.set(STORAGE_KEY, JSON.stringify({ done, boules, volkoren, pitas, worst, focaccias, hydBoule, hydVk, hydFoc, hydPita, startDayIdx, nights, startStr, temp }), false);
+          store.set(STORAGE_KEY, JSON.stringify({ done, boules, volkoren, pitas, worst, focaccias, hydBoule, hydVk, hydFoc, hydPita, startDayIdx, nights, startStr, temp, foldT, sessions, notifOn }), false);
         }
       } catch (e) {}
     })();
-  }, [done, boules, volkoren, pitas, worst, focaccias, hydBoule, hydVk, hydFoc, hydPita, startDayIdx, nights, startStr, temp, loaded]);
+  }, [done, boules, volkoren, pitas, worst, focaccias, hydBoule, hydVk, hydFoc, hydPita, startDayIdx, nights, startStr, temp, foldT, sessions, notifOn, loaded]);
 
-  const toggle = (id) => setDone((d) => ({ ...d, [id]: !d[id] }));
+  // fold-timer tik (alleen tijdens het aftellen)
+  useEffect(() => {
+    if (foldT.phase !== "waiting") return;
+    const id = setInterval(() => setNowTs(Date.now()), 250);
+    return () => clearInterval(id);
+  }, [foldT.phase]);
+
+  // aftellen afgelopen → tijd om te vouwen
+  useEffect(() => {
+    if (foldT.phase === "waiting" && foldT.target && nowTs >= foldT.target) {
+      setFoldT((t) => ({ ...t, phase: "due" }));
+      if (vibratedFor.current !== foldT.currentFold) {
+        vibratedFor.current = foldT.currentFold;
+        if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(250);
+        notify(`Fold ${foldT.currentFold} — nu vouwen`, "Bakschema");
+      }
+    }
+  }, [nowTs, foldT.phase, foldT.target, foldT.currentFold]);
+
+  const toggle = (key) => {
+    const willBeDone = !done[key];
+    setDone((d) => ({ ...d, [key]: !d[key] }));
+    if (willBeDone) setOpenInfo((o) => { if (!o[key]) return o; const n = { ...o }; delete n[key]; return n; });
+  };
   const toggleInfo = (id) => setOpenInfo((o) => ({ ...o, [id]: !o[id] }));
   const reset = () => setDone({});
+
+  const notify = (title, body) => {
+    try {
+      if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
+      if (typeof navigator !== "undefined" && navigator.serviceWorker && navigator.serviceWorker.ready) {
+        navigator.serviceWorker.ready
+          .then((reg) => reg.showNotification(title, { body, icon: "/icon-192.png", badge: "/icon-192.png" }))
+          .catch(() => { try { new Notification(title, { body }); } catch (e) {} });
+      } else { new Notification(title, { body }); }
+    } catch (e) {}
+  };
+  const toggleNotif = () => {
+    if (notifOn) { setNotifOn(false); return; }
+    if (typeof Notification === "undefined") return;
+    Notification.requestPermission().then((p) => setNotifOn(p === "granted"));
+  };
 
   const b = boules, vk = volkoren, p = pitas, w = worst, f = focaccias;
   const lb = levBoule(nights), lf = levFoc(nights), lp = levPita(nights);
@@ -215,34 +316,87 @@ export default function BakeSchedule() {
   const bakeDayName = WEEKDAYS[bakeDayIdx];
 
   const k = clamp(Math.pow(2, (REF_TEMP - temp) / 8), 0.6, 1.8);
-  const pFoc = Math.round(PROOF_FOC_BASE * k);
-  const pBoule = Math.round(PROOF_BOULE_BASE * k);
-  const dBulk = Math.round(BULK_BASE * k);
-  const foldEvery = clamp(Math.round((dBulk / 4) / 5) * 5, 20, 60);
-  const ballRest = Math.round(45 * k); // pita bolrust
-  const worstProof = Math.round(120 * k); // narijs verrijkt deeg
+  const pFoc = round15(PROOF_FOC_BASE * k);
+  const pBoule = round15(PROOF_BOULE_BASE * k);
+  const dBulk = round15(BULK_BASE * k);
+  const foldEvery = clamp(round15(dBulk / 4), 15, 60);
+
+  // fold-timer: fold 1 gebeurt meteen; daarna aftellen naar fold 2, 3, 4
+  const startFolds = () => { setFoldT({ started: true, currentFold: 1, target: null, phase: "due" }); vibratedFor.current = null; };
+  const foldDone = () => setFoldT((t) => {
+    if (t.currentFold >= FOLDS) return { ...t, phase: "done", target: null };
+    return { ...t, currentFold: t.currentFold + 1, target: Date.now() + foldEvery * 60000, phase: "waiting" };
+  });
+  const resetFolds = () => { setFoldT({ started: false, currentFold: 1, target: null, phase: "idle" }); vibratedFor.current = null; };
+
+  const resetAll = () => {
+    setBoules(0); setVolkoren(0); setPitas(0); setWorst(0); setFocaccias(0);
+    setTemp(seasonTemp());
+    setHydBoule(HYD_DEFAULT.boule); setHydVk(HYD_DEFAULT.volkoren); setHydFoc(HYD_DEFAULT.focaccia); setHydPita(HYD_DEFAULT.pita);
+    setDone({});
+    resetFolds();
+    setShowSavePanel(false); setSessionNotes({}); promptedRef.current = false;
+  };
+  const countOf = (kk) => ({ boule: b, volkoren: vk, pita: p, worst: w, focaccia: f }[kk]);
+  const saveSession = () => {
+    const session = {
+      id: Date.now(),
+      savedAt: new Date().toISOString(),
+      counts: { boule: b, volkoren: vk, pita: p, worst: w, focaccia: f },
+      temp, nights,
+      hyd: { boule: hydBoule, volkoren: hydVk, focaccia: hydFoc, pita: hydPita },
+      startDayIdx, startStr,
+      notes: { ...sessionNotes },
+    };
+    setSessions((arr) => [session, ...arr]);
+    setShowSavePanel(false); setSessionNotes({});
+    setSavedFlash(true); setTimeout(() => setSavedFlash(false), 2600);
+  };
+  const ballRest = round15(45 * k); // pita bolrust
+  const worstProof = round15(120 * k); // narijs verrijkt deeg
+
+  // bakstappen sequentieel plannen: types ná elkaar, geen overlap
+  const bakeReady = { s11: 105 + pBoule, s12: pFoc + 25, p5: 65 + ballRest, w7: 75 + worstProof };
+  const bakeDur = { s11: 45, s12: 30, p5: 15, w7: 30 };
+  const bakeActive = { s11: boulesActive, s12: f > 0, p5: p > 0, w7: w > 0 };
+  const orderedBakes = ["s11", "s12", "p5", "w7"].filter((id) => bakeActive[id]).sort((a, bb) => bakeReady[a] - bakeReady[bb]);
+  const seqStart = {}; let cursor = null;
+  for (const id of orderedBakes) { const st = cursor == null ? bakeReady[id] : Math.max(bakeReady[id], cursor); seqStart[id] = st; cursor = st + bakeDur[id]; }
+  const finishOff = cursor; // eind van de laatste bak (min sinds bakeStart), of null
+  const bakeEnd = {};
+  for (const id of orderedBakes) bakeEnd[id] = seqStart[id] + bakeDur[id];
+  const ovenStarts = ["s11", "s12", "w7"].filter((id) => seqStart[id] != null).map((id) => seqStart[id]);
+  const earliestOven = ovenStarts.length ? Math.min(...ovenStarts) : null;
 
   const startOff = { s1: 0, s2: 75, s3: 90, s4: 75 + dBulk, w1: 0, w2: 45, w3: 45 + dBulk };
   const bakeOff = {
-    s5: 0, s6: 30, s7: 75, s8: 105, s9: 105 + pBoule - 60, s10: pFoc, s11: 105 + pBoule, s12: pFoc + 25,
-    pp: 5 + ballRest, p1: 0, p2: 40, p3: 40 + ballRest, p4: 50 + ballRest, p5: 65 + ballRest,
-    w4: 0, w5: 45, w6: 75, w7: 75 + worstProof,
+    s5: 0, s6: 30, s7: 75, s8: 105,
+    s9: earliestOven != null ? earliestOven - 60 : 105 + pBoule - 60,
+    s10: pFoc,
+    s11: seqStart.s11 != null ? seqStart.s11 : 105 + pBoule,
+    s12: seqStart.s12 != null ? seqStart.s12 : pFoc + 25,
+    pp: seqStart.p5 != null ? seqStart.p5 - 60 : 5 + ballRest,
+    p1: 0, p2: 40, p3: 40 + ballRest, p4: 50 + ballRest,
+    p5: seqStart.p5 != null ? seqStart.p5 : 65 + ballRest,
+    w4: 0, w5: 45, w6: 75,
+    w7: seqStart.w7 != null ? seqStart.w7 : 75 + worstProof,
   };
   const getOff = (s) => (s.cluster === "start" ? startOff[s.id] : bakeOff[s.id]);
 
-  const startMin = parseT(startStr);
+  const startMin = round15(parseT(startStr));
   const s4Min = startMin + startOff.s4;
   const bakeUnclamped = startMin - 210;
   const bakeStart = Math.max(bakeUnclamped, DAY_START);
   const coldBulk = (1440 - s4Min) + (nights - 1) * 1440 + bakeStart;
   const bulkH = Math.floor(coldBulk / 60), bulkM = coldBulk % 60;
   const bulkLabel = `${bulkH} u${bulkM ? " " + bulkM + " min" : ""}`;
-  const bakeTimes = [];
-  if (boulesActive) bakeTimes.push(bakeOff.s11);
-  if (f > 0) bakeTimes.push(bakeOff.s12);
-  if (p > 0) bakeTimes.push(bakeOff.p5);
-  if (w > 0) bakeTimes.push(bakeOff.w7);
-  const bakeLabel = fmt(bakeStart + (bakeTimes.length ? Math.max(...bakeTimes) : bakeOff.s11));
+  const bakeLabel = finishOff != null ? fmt(bakeStart + finishOff) : fmt(bakeStart + 210);
+  const laneFinish = {
+    boule: bakeEnd.s11 != null ? fmt(bakeStart + bakeEnd.s11) : null,
+    focaccia: bakeEnd.s12 != null ? fmt(bakeStart + bakeEnd.s12) : null,
+    pita: bakeEnd.p5 != null ? fmt(bakeStart + bakeEnd.p5) : null,
+    worst: bakeEnd.w7 != null ? fmt(bakeStart + bakeEnd.w7) : null,
+  };
 
   const warnEarly = startMin < DAY_START;
   const warnLate = s4Min > DAY_END;
@@ -254,6 +408,7 @@ export default function BakeSchedule() {
     if (s.id === "s3") return fmt(t) + "–" + fmt(startMin + startOff.s4);
     return fmt(t);
   };
+  const timeMin = (s) => (s.cluster === "start" ? startMin : bakeStart) + getOff(s);
 
   const ingFor = (id) => {
     const P = PER_BOULE, V = PER_VK, Q = PER_FOCACCIA, PI = PER_PITA, W = PER_WORST;
@@ -315,10 +470,36 @@ export default function BakeSchedule() {
     return s.type === "boule"; // boule of volkoren delen de boule-stappen
   };
 
-  const activeSteps = STEPS.filter(countOK);
-  const total = activeSteps.length;
-  const doneCount = activeSteps.filter((s) => done[s.id]).length;
+  const LEAN = ["boule", "volkoren", "focaccia", "pita"];
+  const laneActiveFn = (lt) => lt === "boule" ? b > 0 : lt === "volkoren" ? vk > 0 : lt === "focaccia" ? f > 0 : lt === "pita" ? p > 0 : lt === "worst" ? w > 0 : false;
+  const stepInLane = (s, lt) => {
+    if (s.type === "beide") return !s.fullWidth && LEAN.includes(lt);
+    if (lt === "boule" || lt === "volkoren") return s.type === "boule";
+    return s.type === lt;
+  };
+  const instanceKeys = [];
+  ["start", "bake"].forEach((dayKey) => {
+    const ds = STEPS.filter((s) => s.cluster === dayKey && countOK(s) && matches(s));
+    if (!ds.length) return;
+    const lts = LANE_ORDER.filter((lt) => laneActiveFn(lt) && ds.some((s) => stepInLane(s, lt)));
+    const laneMode = lts.length >= 2;
+    ds.forEach((s) => {
+      if (!laneMode || (s.type === "beide" && s.fullWidth)) { instanceKeys.push(s.id); return; }
+      lts.forEach((lt, i) => { if (stepInLane(s, lt)) instanceKeys.push(`${s.id}#${i + 1}`); });
+    });
+  });
+  const total = instanceKeys.length;
+  const doneCount = instanceKeys.filter((kk) => done[kk]).length;
   const pct = total ? Math.round((doneCount / total) * 100) : 0;
+  const allDone = total > 0 && doneCount === total;
+
+  // laatste stap voltooid → vraag om op te slaan
+  useEffect(() => {
+    if (allDone && !promptedRef.current) { setShowSavePanel(true); promptedRef.current = true; }
+    if (!allDone) promptedRef.current = false;
+  }, [allDone]);
+
+  const activeTypes = [["boule", b], ["volkoren", vk], ["pita", p], ["worst", w], ["focaccia", f]].filter(([, n]) => n > 0);
   const levainTotal = lb * (b + vk) + lp * p + PER_WORST.levain * w + lf * f;
 
   const chips = [
@@ -362,13 +543,16 @@ export default function BakeSchedule() {
       <style>{css}</style>
 
       <header className="head">
-        <div className="eyebrow">Desem-weekend · brood + focaccia</div>
         <h1>Bakschema</h1>
         <p className="lede">
-          Start <b>{cap(startDayName)} {fmt(startMin)}</b> · koude bulk ~{bulkLabel} · bakken <b>{cap(bakeDayName)} ~{bakeLabel}</b>
+          Start <b>{cap(startDayName)} {fmt(startMin)}</b> · koude bulk ~{bulkLabel} · klaar <b>{cap(bakeDayName)} ~{bakeLabel}</b>
         </p>
 
         <div className="controls">
+          <div className="ctlbar">
+            <span className="ctlbarlabel">Instellingen</span>
+            <button className="resetbtn" onClick={resetAll}>↺ Reset velden</button>
+          </div>
           <Stepper label="Boules" value={boules} set={setBoules} min={0} max={8} ink={TYPES.boule.ink} />
           <Stepper label="Volkoren" value={volkoren} set={setVolkoren} min={0} max={4} ink={TYPES.volkoren.ink} />
           <Stepper label="Pita's" value={pitas} set={setPitas} min={0} max={12} ink={TYPES.pita.ink} />
@@ -382,7 +566,7 @@ export default function BakeSchedule() {
           </div>
           <div className="ctl">
             <span className="ctllabel">Starttijd</span>
-            <input className="timeinput" type="time" value={startStr} min="08:30" max="19:30" step="300"
+            <input className="timeinput" type="time" value={startStr} min="08:30" max="19:30" step="900"
                    onChange={(e) => e.target.value && setStartStr(e.target.value)} />
           </div>
           <div className="ctl ctlwide">
@@ -408,17 +592,12 @@ export default function BakeSchedule() {
               ))}
             </div>
           </div>
-          {(b > 0 || vk > 0 || p > 0 || f > 0) && (
-            <div className="ctl ctlwide">
-              <span className="ctllabel">Hydratatie</span>
-              <div className="hydrow">
-                {b > 0 && <HydCtl label="Boules" v={hydBoule} set={setHydBoule} ink={TYPES.boule.ink} />}
-                {vk > 0 && <HydCtl label="Volkoren" v={hydVk} set={setHydVk} ink={TYPES.volkoren.ink} />}
-                {p > 0 && <HydCtl label="Pita's" v={hydPita} set={setHydPita} ink={TYPES.pita.ink} />}
-                {f > 0 && <HydCtl label="Focaccia" v={hydFoc} set={setHydFoc} ink={TYPES.focaccia.ink} />}
-              </div>
-            </div>
-          )}
+          <div className="ctl ctlwide">
+            <span className="ctllabel">Meldingen (fold-timer)</span>
+            <button className={"notifbtn" + (notifOn ? " on" : "")} onClick={toggleNotif}>
+              {notifOn ? "Aan — je krijgt een melding per fold" : "Zet meldingen aan"}
+            </button>
+          </div>
         </div>
         <p className="constraint">Stappen tussen 08:30–23:00 · koude bulk schuift mee ({nights} nacht{nights > 1 ? "en" : ""}) · warme-rijs- en hydratatie-instellingen rekenen automatisch door.</p>
 
@@ -439,9 +618,30 @@ export default function BakeSchedule() {
           <div className="bar"><span style={{ width: `${pct}%` }} /></div>
           <div className="pmeta">
             <span>{doneCount}/{total} stappen</span>
-            <button className="reset" onClick={reset} disabled={doneCount === 0}>Reset</button>
+            <button className="reset" onClick={reset} disabled={doneCount === 0}>Vinkjes wissen</button>
           </div>
         </div>
+
+        {savedFlash && <div className="savedflash">Sessie opgeslagen in het logboek ✓</div>}
+
+        {showSavePanel && (
+          <div className="savepanel">
+            <div className="savetitle">Baksessie voltooid — opslaan?</div>
+            <p className="savesub">Leg vast wat je bakte en hoe het ging. Je vindt het terug in het logboek.</p>
+            {activeTypes.length === 0 && <p className="savesub">Geen broden ingesteld om op te slaan.</p>}
+            {activeTypes.map(([kk]) => (
+              <div key={kk} className="savefield">
+                <label style={{ color: TYPES[kk].ink }}>{TYPES[kk].label} — {countOf(kk)}×</label>
+                <textarea rows={2} placeholder="Resultaat / opmerkingen…" value={sessionNotes[kk] || ""}
+                  onChange={(e) => setSessionNotes((n) => ({ ...n, [kk]: e.target.value }))} />
+              </div>
+            ))}
+            <div className="saverow">
+              <button className="primary2" onClick={saveSession} disabled={activeTypes.length === 0}>Sessie opslaan</button>
+              <button className="ghost2" onClick={() => setShowSavePanel(false)}>Later</button>
+            </div>
+          </div>
+        )}
 
         <div className="chips">
           {chips.map((c) => {
@@ -464,7 +664,61 @@ export default function BakeSchedule() {
           <p className="hint"><span className="dot" style={{ background: TYPES.beide.node }} /> Gedeelde stappen horen ook bij dit brood.</p>
         )}
 
-        <button className="ingtoggle" onClick={() => setShowIng((v) => !v)}>{showIng ? "− " : "+ "}Ingrediënten</button>
+        <div className="tabrow">
+          <button className={"tabbtn" + (showIng ? " on" : "")} onClick={() => setShowIng((v) => !v)}>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 11h18" /><path d="M4 11a8 8 0 0 0 16 0" /><path d="M12 11c0-4 2-6 4-7" /><path d="M12 11c0-3-1-5-3-6" /></svg>
+            Ingrediënten
+          </button>
+          <button className={"tabbtn" + (showLog ? " on" : "")} onClick={() => setShowLog((v) => !v)}>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 5a2 2 0 0 1 2-2h13v18H6a2 2 0 0 1-2-2z" /><path d="M8 7h8M8 11h8M8 15h5" /></svg>
+            Logboek <span className="tabcount">{sessions.length}</span>
+          </button>
+          <button className={"tabbtn" + (showLegend ? " on" : "")} onClick={() => setShowLegend((v) => !v)}>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 16v-4M12 8h.01" /></svg>
+            Legenda
+          </button>
+        </div>
+        {allDone && !showSavePanel && <button className="savelink" onClick={() => setShowSavePanel(true)}>+ Sessie opslaan</button>}
+
+        {showLegend && (
+          <div className="legendpanel">
+            <div className="legcol">
+              <div className="leghead">Handelingen</div>
+              {ACT_LEGEND.map((a) => (
+                <div key={a} className="legrow"><span className="legicon"><ActIcon a={a} /></span>{ACT_META[a]}</div>
+              ))}
+            </div>
+            <div className="legcol">
+              <div className="leghead">Broodtypes (kleur)</div>
+              {["boule", "volkoren", "pita", "worst", "focaccia"].map((k) => (
+                <div key={k} className="legrow"><span className="legdot" style={{ background: TYPES[k].node }} />{TYPES[k].label}</div>
+              ))}
+              <div className="legrow"><span className="legdot" style={{ background: TYPES.beide.node }} />Gedeelde stap</div>
+            </div>
+          </div>
+        )}
+        {showLog && (
+          <div className="logpanel">
+            {sessions.length === 0 && <p className="logempty">Nog geen sessies opgeslagen. Vink de laatste stap af om er een te bewaren.</p>}
+            {sessions.map((s) => (
+              <div key={s.id} className="logitem">
+                <div className="logtop">
+                  <span className="logdate">{fmtDate(s.savedAt)}</span>
+                  <button className="logdel" onClick={() => setSessions((arr) => arr.filter((x) => x.id !== s.id))} aria-label="verwijderen">×</button>
+                </div>
+                <div className="logsummary">
+                  {Object.entries(s.counts).filter(([, n]) => n > 0).map(([kk, n]) => `${n} ${TYPES[kk].label}`).join(" · ") || "—"}
+                </div>
+                <div className="logmeta">
+                  {s.temp} °C · {s.nights} nacht{s.nights > 1 ? "en" : ""} · hydr. B{s.hyd.boule}/V{s.hyd.volkoren}/P{s.hyd.pita}/F{s.hyd.focaccia}
+                </div>
+                {Object.entries(s.notes || {}).filter(([kk, v]) => v && s.counts[kk] > 0).map(([kk, v]) => (
+                  <div key={kk} className="lognote"><b style={{ color: TYPES[kk].ink }}>{TYPES[kk].label}:</b> {v}</div>
+                ))}
+              </div>
+            ))}
+          </div>
+        )}
         {showIng && (
           <div className="ingpanel">
             {b > 0 && (
@@ -512,50 +766,192 @@ export default function BakeSchedule() {
         const daySteps = STEPS.filter((s) => s.cluster === day.key && countOK(s) && matches(s))
           .sort((a, b2) => getOff(a) - getOff(b2));
         if (daySteps.length === 0) return null;
+
+        const ingForLane = (id, laneType) => {
+          const pfx = LANE_PREFIX[laneType] || [];
+          const KNOWN = ["Boules:", "Volkoren:", "Focaccia:", "Pita's:"];
+          return ingFor(id).filter((line) => { const typed = KNOWN.some((p) => line.startsWith(p)); return typed ? pfx.some((p) => line.startsWith(p)) : true; });
+        };
+
+        const renderCard = (s, opts = {}) => {
+          const t = TYPES[s.type];
+          const ikey = opts.ikey || s.id;
+          const isDone = !!done[ikey];
+          const isOpen = !!openInfo[ikey];
+          const ing = opts.ingType ? ingForLane(s.id, opts.ingType) : ingFor(s.id);
+          const proof = proofFor(s.id);
+          const act = ACT_OF[s.id] || "take";
+          const showTimer = opts.showTimer !== false;
+          return (
+            <div
+              className={"card" + (isDone ? " done" : "") + (s.bake ? " bake" : "") + (isOpen ? " open" : "")}
+              role="button" tabIndex={0} aria-pressed={isDone}
+              onClick={() => toggle(ikey)}
+              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(ikey); } }}
+              style={{ "--ink": t.ink, "--tint": t.tint }}>
+              <span className="node" style={{ color: isDone ? "var(--muted)" : ACT_COLOR[act] }}>
+                {isDone ? <span className="donedot" /> : <ActIcon a={act} />}
+              </span>
+              <button className={"infobtn" + (isOpen ? " open" : "")}
+                onClick={(e) => { e.stopPropagation(); toggleInfo(ikey); }}
+                aria-label={isOpen ? "Verberg uitleg" : "Toon uitleg"} aria-expanded={isOpen}
+                style={isOpen ? { background: t.ink, borderColor: t.ink, color: "#fff" } : { color: t.ink, borderColor: t.ink }}>i</button>
+              <div className="body">
+                <div className="cardtop">
+                  <span className="time">{timeLabel(s)}</span>
+                  <span className="badge" style={{ background: t.tint, color: t.ink }}>{opts.ingType ? TYPES[opts.ingType].label : t.label}</span>
+                  <span className="actlabel">{ACT_META[act]}</span>
+                  {s.bake && <span className="ovenlabel">in de oven</span>}
+                </div>
+                <div className="title">{s.title}</div>
+                {ing.length > 0 && <ul className="ing">{ing.map((i, k2) => <li key={k2}>{i}</li>)}</ul>}
+                {s.note && <div className="note">{s.note}</div>}
+                {proof && <div className="proofline" style={{ background: t.tint, color: t.ink }}>{proof}</div>}
+                {s.id === "s3" && showTimer && (
+                  <div className="ftwrap" onClick={(e) => e.stopPropagation()}>
+                    {!foldT.started && (
+                      <button className="ftbtn" onClick={startFolds}>Start folds — interval ~{foldEvery} min</button>
+                    )}
+                    {foldT.started && (
+                      <>
+                        <div className="ftdots">
+                          {Array.from({ length: FOLDS }).map((_, i) => {
+                            const dn = foldT.phase === "done" ? true : i < foldT.currentFold - 1;
+                            const cur = foldT.phase !== "done" && i === foldT.currentFold - 1;
+                            return <span key={i} className={"fdot" + (dn ? " done" : "") + (cur ? " cur" : "")} />;
+                          })}
+                        </div>
+                        {foldT.phase === "waiting" && (
+                          <div className="ftrun">
+                            <div className="ftcount">{fmtClock(Math.max(0, foldT.target - nowTs))}</div>
+                            <div className="ftlabel">tot fold {foldT.currentFold}</div>
+                            <div className="ftbar"><span style={{ width: `${clamp(1 - Math.max(0, foldT.target - nowTs) / (foldEvery * 60000), 0, 1) * 100}%` }} /></div>
+                            <button className="ftghost" onClick={resetFolds}>stop</button>
+                          </div>
+                        )}
+                        {foldT.phase === "due" && (
+                          <div className="ftdue">
+                            <div className="ftduetitle">Fold {foldT.currentFold} — nu vouwen</div>
+                            <button className="ftbtn" onClick={foldDone}>Gedaan ✓</button>
+                            <button className="ftghost" onClick={resetFolds}>stop</button>
+                          </div>
+                        )}
+                        {foldT.phase === "done" && (
+                          <div className="ftdonebox">
+                            <div className="ftdonetitle">Alle {FOLDS} folds gedaan ✓</div>
+                            <div className="ftdonesub">Laatste ~⅓ ongestoord laten rijzen, dan de koelkast in.</div>
+                            <button className="ftghost" onClick={resetFolds}>reset</button>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
+                {isOpen && s.detail && <div className="detail" style={{ background: t.tint, borderColor: t.node }}>{s.detail}</div>}
+              </div>
+            </div>
+          );
+        };
+
+        const laneTypes = LANE_ORDER.filter((lt) => laneActiveFn(lt) && daySteps.some((s) => stepInLane(s, lt)));
+        const nLanes = laneTypes.length;
+        const laneMode = nLanes >= 2;
+        const isBake = day.key === "bake";
+        const finishTime = isBake && finishOff != null ? fmt(bakeStart + finishOff) : null;
+        let firstLeanCol = 1;
+        for (let i = 0; i < laneTypes.length; i++) { if (LEAN.includes(laneTypes[i])) { firstLeanCol = i + 1; break; } }
+
+        // enkele tijdlijn (1 baan)
+        const items = [];
+        daySteps.forEach((s, idx) => {
+          items.push({ kind: "step", s });
+          const next = daySteps[idx + 1];
+          const gap = next ? timeMin(next) - timeMin(s) : 0;
+          if (next && gap >= 15) items.push({ kind: "wait", gap });
+        });
+        if (finishTime) items.push({ kind: "finish" });
+        else if (!isBake) items.push({ kind: "coldbulk" });
+
+        // banen: per baan een lijst, dan samenvoegen op tijd (gelijke tijd = zelfde rij)
+        const laneItems = {};
+        laneTypes.forEach((lt) => {
+          const ls = daySteps.filter((s) => stepInLane(s, lt)).sort((a, b2) => timeMin(a) - timeMin(b2));
+          const arr = [];
+          ls.forEach((s, i) => {
+            arr.push({ kind: "step", s, time: timeMin(s) });
+            const nx = ls[i + 1];
+            if (nx) { const g = timeMin(nx) - timeMin(s); if (g >= 15) arr.push({ kind: "wait", gap: g, time: timeMin(s) + 0.5 }); }
+          });
+          laneItems[lt] = arr;
+        });
+        const fullShared = daySteps.filter((s) => s.type === "beide" && s.fullWidth);
+        const events = [];
+        laneTypes.forEach((lt, ci) => laneItems[lt].forEach((it) => events.push({ time: it.time, col: ci + 1, it })));
+        fullShared.forEach((s) => events.push({ time: timeMin(s), full: true, s }));
+        events.sort((a, b2) => a.time - b2.time);
+        const placed = [];
+        let row = 1, gi = 0;
+        while (gi < events.length) {
+          const t0 = events[gi].time;
+          const grp = [];
+          while (gi < events.length && events[gi].time === t0) { grp.push(events[gi]); gi++; }
+          grp.filter((e) => e.full).forEach((e) => { row += 1; placed.push({ kind: "shared", s: e.s, row }); });
+          const laneEvs = grp.filter((e) => !e.full);
+          if (laneEvs.length) { row += 1; laneEvs.forEach((e) => placed.push({ ...e.it, col: e.col, row })); }
+        }
+        const lastRow = row;
+        const laneFinishRow = lastRow + 1;
+        const eatRow = lastRow + 2;
+
         return (
           <section key={day.key} className="day">
             <div className="dayhead">
               <span className="dayname">{day.label}</span>
               <span className="daysub">{day.sub}</span>
             </div>
-            <div className="track">
-              {daySteps.map((s) => {
-                const t = TYPES[s.type];
-                const isDone = !!done[s.id];
-                const isOpen = !!openInfo[s.id];
-                const ing = ingFor(s.id);
-                const proof = proofFor(s.id);
-                return (
-                  <div key={s.id}
-                    className={"card" + (isDone ? " done" : "") + (s.bake ? " bake" : "")}
-                    role="button" tabIndex={0} aria-pressed={isDone}
-                    onClick={() => toggle(s.id)}
-                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(s.id); } }}
-                    style={{ "--ink": t.ink, "--tint": t.tint }}>
-                    <span className="node" style={{ borderColor: t.node, background: isDone ? t.node : "transparent" }}>
-                      {isDone && <span className="tick">✓</span>}
-                    </span>
-                    <span className="rail" style={{ background: t.node }} />
-                    <button className={"infobtn" + (isOpen ? " open" : "")}
-                      onClick={(e) => { e.stopPropagation(); toggleInfo(s.id); }}
-                      aria-label={isOpen ? "Verberg uitleg" : "Toon uitleg"} aria-expanded={isOpen}
-                      style={isOpen ? { background: t.ink, borderColor: t.ink, color: "#fff" } : { color: t.ink, borderColor: t.ink }}>i</button>
-                    <div className="body">
-                      <div className="cardtop">
-                        <span className="time">{timeLabel(s)}</span>
-                        <span className="badge" style={{ background: t.tint, color: t.ink }}>{t.label}</span>
-                        {s.bake && <span className="ovenlabel">in de oven</span>}
-                      </div>
-                      <div className="title">{s.title}</div>
-                      {ing.length > 0 && <ul className="ing">{ing.map((i, k2) => <li key={k2}>{i}</li>)}</ul>}
-                      {s.note && <div className="note">{s.note}</div>}
-                      {proof && <div className="proofline" style={{ background: t.tint, color: t.ink }}>{proof}</div>}
-                      {isOpen && s.detail && <div className="detail" style={{ background: t.tint, borderColor: t.node }}>{s.detail}</div>}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+
+            {laneMode ? (
+              <>
+                <div className="laneheads" style={{ gridTemplateColumns: `repeat(${nLanes}, 1fr)` }}>
+                  {laneTypes.map((lt) => (
+                    <div key={lt} className="lanehead" style={{ color: TYPES[lt].ink, borderColor: TYPES[lt].node }}>{TYPES[lt].label}</div>
+                  ))}
+                </div>
+                <div className="daylanes" style={{ gridTemplateColumns: `repeat(${nLanes}, 1fr)` }}>
+                  {laneTypes.map((lt, i) => (
+                    <span key={"sp" + lt} className="colspine" style={{ gridColumn: i + 1, gridRow: `1 / ${laneFinishRow + 1}`, color: TYPES[lt].node }} />
+                  ))}
+                  {placed.map((it, idx) => {
+                    if (it.kind === "shared") return <div key={idx} className="sharedwrap" style={{ gridColumn: "1 / -1", gridRow: it.row }}>{renderCard(it.s)}</div>;
+                    if (it.kind === "wait") return <div key={idx} className="lanewaitrow" style={{ gridColumn: it.col, gridRow: it.row }}><span className="lanewaitpill"><ClockIcon />{fmtDur(it.gap)}</span></div>;
+                    const s = it.s;
+                    const ikey = `${s.id}#${it.col}`;
+                    const isOpen = !!openInfo[ikey];
+                    const laneOfCol = laneTypes[it.col - 1];
+                    const ingType = (s.type === "beide" || s.type === "boule") ? laneOfCol : null;
+                    const showTimer = s.id === "s3" ? it.col === firstLeanCol : true;
+                    return <div key={idx} style={{ gridColumn: isOpen ? "1 / -1" : it.col, gridRow: it.row, zIndex: isOpen ? 6 : 1, minWidth: 0 }}>{renderCard(s, { ikey, ingType, showTimer })}</div>;
+                  })}
+                  {isBake && laneTypes.map((lt, i) => laneFinish[lt] ? (
+                    <div key={"lf" + lt} className="lanefinish" style={{ gridColumn: i + 1, gridRow: laneFinishRow, color: TYPES[lt].ink }}>✓ klaar {laneFinish[lt]}</div>
+                  ) : null)}
+                  {!isBake && coldBulk > 0 && (
+                    <div className="lanewaitrow full" style={{ gridColumn: "1 / -1", gridRow: laneFinishRow }}><span className="lanewaitpill big"><ClockIcon />{bulkLabel} koude bulk → bakdag</span></div>
+                  )}
+                  {finishTime && <div className="eatrow" style={{ gridColumn: "1 / -1", gridRow: eatRow }}>Eet smakelijk!<span className="eatsub">alles klaar om {finishTime}</span></div>}
+                </div>
+              </>
+            ) : (
+              <div className="track">
+                <span className="spine" />
+                {items.map((it, i) => {
+                  if (it.kind === "wait") return <div key={i} className="gap"><span className="gaplabel"><ClockIcon />{fmtDur(it.gap)}</span></div>;
+                  if (it.kind === "coldbulk") return <div key={i} className="gap"><span className="gaplabel big"><ClockIcon />{bulkLabel} koude bulk → bakdag</span></div>;
+                  if (it.kind === "finish") return <div key={i} className="eatrow">Eet smakelijk!<span className="eatsub">alles klaar om {finishTime}</span></div>;
+                  return <React.Fragment key={i}>{renderCard(it.s)}</React.Fragment>;
+                })}
+              </div>
+            )}
           </section>
         );
       })}
@@ -578,6 +974,38 @@ h1 { font-family:'Fraunces',serif; font-weight:600; font-size:40px; line-height:
 .lede b { color:var(--ink); }
 
 .controls { display:flex; flex-wrap:wrap; gap:10px 12px; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:12px; }
+.ctlbar { flex-basis:100%; display:flex; align-items:center; justify-content:space-between; }
+.ctlbarlabel { font-family:'Space Mono',monospace; font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+.resetbtn { font:inherit; font-size:12.5px; font-weight:600; color:var(--muted); background:var(--paper); border:1px solid var(--line); border-radius:20px; padding:5px 12px; cursor:pointer; }
+.resetbtn:active { transform:scale(.96); }
+.notifbtn { width:100%; font:inherit; font-size:13px; font-weight:600; color:var(--ink); background:var(--paper); border:1px solid var(--line); border-radius:10px; padding:9px; cursor:pointer; }
+.notifbtn.on { background:#EAEFDB; border-color:#B7C58A; color:#4C5E20; }
+.notifbtn:active { transform:scale(.99); }
+
+.savedflash { background:#EAEFDB; border:1px solid #B7C58A; color:#4C5E20; border-radius:11px; padding:9px 12px; margin-bottom:12px; font-size:13px; font-weight:600; }
+.savepanel { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px; margin-bottom:14px; }
+.savetitle { font-family:'Fraunces',serif; font-weight:600; font-size:18px; margin-bottom:2px; }
+.savesub { font-size:12.5px; color:var(--muted); line-height:1.45; margin:0 0 12px; }
+.savefield { display:flex; flex-direction:column; gap:4px; margin-bottom:10px; }
+.savefield label { font-size:12px; font-weight:700; }
+.savefield textarea { font:inherit; font-size:13px; color:var(--ink); background:var(--paper); border:1px solid var(--line); border-radius:9px; padding:8px; resize:vertical; width:100%; }
+.saverow { display:flex; gap:8px; }
+.primary2 { flex:1; border:none; border-radius:10px; background:#B15511; color:#fff; font:inherit; font-weight:600; font-size:14px; padding:11px; cursor:pointer; }
+.primary2:disabled { opacity:.4; cursor:default; }
+.ghost2 { border:1px solid var(--line); border-radius:10px; background:transparent; color:var(--muted); font:inherit; font-size:13px; padding:11px 16px; cursor:pointer; }
+
+.logpanel { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:12px; margin:4px 0 10px; }
+.logempty { font-size:12.5px; color:var(--muted); font-style:italic; margin:2px 0; }
+.logitem { border-left:3px solid var(--line); padding:2px 0 8px 12px; margin-bottom:10px; }
+.logitem:last-child { margin-bottom:2px; }
+.logtop { display:flex; align-items:center; justify-content:space-between; }
+.logdate { font-family:'Space Mono',monospace; font-size:11px; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); }
+.logdel { border:none; background:none; color:var(--muted); font-size:18px; line-height:1; cursor:pointer; padding:0 4px; }
+.logsummary { font-family:'Fraunces',serif; font-weight:600; font-size:15px; margin:2px 0; }
+.logmeta { font-family:'Space Mono',monospace; font-size:11px; color:var(--muted); margin-bottom:4px; }
+.lognote { font-size:13px; line-height:1.45; color:var(--ink); margin-top:2px; }
+
+.eyebrow { display:none; }
 .ctl { display:flex; flex-direction:column; gap:6px; flex:1 1 auto; min-width:96px; }
 .ctlwide { flex-basis:100%; }
 .ctllabel { font-family:'Space Mono',monospace; font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
@@ -629,6 +1057,19 @@ h1 { font-family:'Fraunces',serif; font-weight:600; font-size:40px; line-height:
 .hint { display:flex; align-items:center; gap:7px; font-size:12.5px; color:var(--muted); margin:2px 0 8px; }
 
 .ingtoggle { font:inherit; font-family:'Space Mono',monospace; font-size:12px; background:none; border:none; color:var(--muted); cursor:pointer; padding:6px 0; text-transform:uppercase; letter-spacing:.08em; }
+.tabrow { display:flex; gap:8px; margin:8px 0 4px; flex-wrap:wrap; }
+.tabbtn { flex:1; min-width:100px; display:inline-flex; align-items:center; justify-content:center; gap:7px; font:inherit; font-size:13px; font-weight:600; color:var(--ink); background:var(--card); border:1px solid var(--line); border-radius:11px; padding:9px 10px; cursor:pointer; }
+.tabbtn.on { background:var(--ink); border-color:var(--ink); color:#fff; }
+.tabbtn:active { transform:scale(.98); }
+.tabcount { font-family:'Space Mono',monospace; font-size:11px; background:var(--line); color:var(--ink); border-radius:20px; padding:1px 7px; }
+.tabbtn.on .tabcount { background:rgba(255,255,255,.25); color:#fff; }
+.savelink { width:100%; font:inherit; font-size:13px; font-weight:600; color:#B15511; background:#F5E6D2; border:1px solid #E4B183; border-radius:11px; padding:9px; cursor:pointer; margin-bottom:4px; }
+.legendpanel { display:flex; gap:16px; flex-wrap:wrap; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px; margin:4px 0 10px; }
+.legcol { flex:1; min-width:150px; }
+.leghead { font-family:'Space Mono',monospace; font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin-bottom:8px; }
+.legrow { display:flex; align-items:center; gap:9px; font-size:13px; margin-bottom:6px; color:var(--ink); }
+.legicon { width:20px; height:20px; border-radius:50%; border:1.5px solid var(--line); display:flex; align-items:center; justify-content:center; color:var(--muted); flex:none; }
+.legdot { width:12px; height:12px; border-radius:50%; flex:none; }
 .ingpanel { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px; margin:4px 0 10px; }
 .ingcol { border-left:3px solid; padding-left:12px; margin-bottom:12px; }
 .ingcol:last-of-type { margin-bottom:6px; }
@@ -642,16 +1083,51 @@ h1 { font-family:'Fraunces',serif; font-weight:600; font-size:40px; line-height:
 .daysub { font-family:'Space Mono',monospace; font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
 
 .track { position:relative; display:flex; flex-direction:column; gap:12px; }
-.card { position:relative; text-align:left; width:100%; display:block; padding:13px 46px 14px 40px; background:var(--card); border:1px solid var(--line); border-radius:14px; cursor:pointer; font:inherit; color:var(--ink); transition:opacity .2s ease, transform .08s ease, box-shadow .2s ease; }
-.card:active { transform:scale(.992); }
-.card:focus-visible { outline:2px solid var(--ink); outline-offset:2px; }
-.card.done { opacity:.5; }
-.rail { position:absolute; left:17px; top:34px; bottom:-12px; width:2px; opacity:.4; }
-.track .card:last-child .rail { display:none; }
-.node { position:absolute; left:11px; top:15px; width:15px; height:15px; border-radius:50%; border:2px solid; background:transparent; display:flex; align-items:center; justify-content:center; z-index:1; }
-.tick { color:#fff; font-size:9px; line-height:1; font-weight:700; }
-.infobtn { position:absolute; top:12px; right:12px; z-index:2; width:24px; height:24px; border-radius:50%; border:1.5px solid; background:var(--card); font-family:'Fraunces',serif; font-style:italic; font-weight:600; font-size:14px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:transform .08s ease; }
-.infobtn:active { transform:scale(.9); }
+.spine { position:absolute; left:19px; top:6px; bottom:6px; width:2px; background:var(--line); border-radius:2px; z-index:0; }
+.spine::before, .spine::after { content:""; position:absolute; left:-3px; width:8px; height:8px; border-radius:50%; background:var(--line); }
+.spine::before { top:-5px; }
+.spine::after { bottom:-5px; }
+.card { position:relative; text-align:left; width:100%; display:block; padding:0 0 0 42px; background:transparent; border:none; cursor:pointer; font:inherit; color:var(--ink); transition:opacity .2s ease, transform .08s ease; z-index:1; }
+.card:active { transform:scale(.995); }
+.card:focus-visible { outline:2px solid var(--ink); outline-offset:2px; border-radius:14px; }
+.card.done { opacity:.32; }
+.card.done .body { filter:grayscale(.3); }
+.card.open { z-index:6; }
+.card.open .body { box-shadow:0 10px 28px -12px rgba(42,33,26,.4); }
+.body { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:12px 42px 13px 15px; }
+.node { position:absolute; left:5px; top:11px; width:30px; height:30px; border-radius:50%; background:var(--paper); display:flex; align-items:center; justify-content:center; color:var(--muted); z-index:2; }
+.node svg { width:21px; height:21px; }
+.tick { font-size:17px; line-height:1; font-weight:700; color:var(--ink); }
+.gap { position:relative; padding:2px 0 2px 42px; z-index:1; }
+.gap::before { content:""; position:absolute; left:15px; top:50%; transform:translateY(-50%); width:9px; height:9px; border-radius:50%; background:var(--paper); border:2px solid var(--line); }
+.gaplabel { display:inline-flex; align-items:center; font-family:'Space Mono',monospace; font-size:11px; color:var(--muted); background:var(--paper); border:1px dashed var(--line); border-radius:20px; padding:3px 11px; }
+.actlabel { font-family:'Space Mono',monospace; font-size:10px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); }
+
+.daylanes { display:grid; column-gap:12px; row-gap:10px; align-items:start; position:relative; }
+.daylanes > * { min-width:0; }
+.daylanes .body { overflow-wrap:anywhere; }
+.donedot { width:16px; height:16px; border-radius:50%; background:var(--muted); }
+.lanewaitrow.full { display:flex; justify-content:center; padding-left:0; }
+.lanewaitrow.full::before { display:none; }
+.lanewaitpill.big, .gaplabel.big { font-weight:700; color:var(--ink); border-style:solid; border-color:var(--line); background:var(--card); }
+.laneheads { display:grid; gap:12px; margin-bottom:2px; }
+.lanehead { font-family:'Space Mono',monospace; font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; text-align:center; padding:6px 4px; border:1px solid; border-radius:9px; background:var(--card); }
+.colspine { border-left:2px solid; margin-left:19px; opacity:.5; border-radius:2px; z-index:0; align-self:stretch; position:relative; }
+.colspine::before, .colspine::after { content:""; position:absolute; left:-5px; width:8px; height:8px; border-radius:50%; background:currentColor; }
+.colspine::before { top:-3px; }
+.colspine::after { bottom:-3px; }
+.lanewaitrow { position:relative; z-index:1; padding-left:42px; }
+.lanewaitrow::before { content:""; position:absolute; left:15px; top:50%; transform:translateY(-50%); width:9px; height:9px; border-radius:50%; background:var(--paper); border:2px solid var(--line); }
+.lanewaitpill { display:inline-flex; align-items:center; font-family:'Space Mono',monospace; font-size:11px; color:var(--muted); background:var(--paper); border:1px dashed var(--line); border-radius:20px; padding:3px 10px; }
+.sharedwrap { z-index:1; }
+.daylanes .title { font-size:15px; }
+.finishrow { text-align:center; font-family:'Fraunces',serif; font-weight:600; font-size:15px; color:#2A211A; background:linear-gradient(180deg,#FDF3EA,var(--card)); border:1px solid #E8B98C; border-radius:12px; padding:11px; }
+.finishrow.solo { margin-top:2px; }
+.eatrow { display:flex; flex-direction:column; align-items:center; text-align:center; font-family:'Fraunces',serif; font-weight:600; font-size:20px; color:var(--ink); padding:16px 0 4px; }
+.eatsub { font-family:'Space Mono',monospace; font-weight:400; font-size:11px; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); margin-top:3px; }
+.lanefinish { font-family:'Space Mono',monospace; font-size:11px; font-weight:700; letter-spacing:.03em; text-align:center; padding:5px 4px; border-radius:8px; background:var(--card); border:1px solid var(--line); }
+.infobtn { position:absolute; top:10px; right:10px; z-index:3; width:27px; height:27px; border-radius:8px; border:1px solid; background:var(--card); font-family:'Inter',sans-serif; font-style:normal; font-weight:700; font-size:14px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:transform .08s ease; }
+.infobtn:active { transform:scale(.92); }
 .infobtn:focus-visible { outline:2px solid var(--ink); outline-offset:2px; }
 .cardtop { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:4px; }
 .time { font-family:'Space Mono',monospace; font-size:13px; font-weight:700; color:var(--ink); }
@@ -663,8 +1139,27 @@ h1 { font-family:'Fraunces',serif; font-weight:600; font-size:40px; line-height:
 .ing li::before { content:"·"; position:absolute; left:2px; color:var(--muted); }
 .note { font-size:13px; color:var(--muted); line-height:1.45; }
 .proofline { margin-top:7px; display:inline-block; font-family:'Space Mono',monospace; font-size:11.5px; font-weight:700; padding:3px 9px; border-radius:7px; }
+.ftwrap { margin-top:11px; border-top:1px dashed var(--line); padding-top:11px; }
+.ftbtn { width:100%; border:none; border-radius:10px; background:#B15511; color:#fff; font:inherit; font-weight:600; font-size:13.5px; padding:10px; cursor:pointer; margin-bottom:6px; }
+.ftbtn:active { transform:scale(.99); }
+.ftghost { width:100%; border:1px solid var(--line); border-radius:9px; background:transparent; color:var(--muted); font:inherit; font-size:12px; padding:7px; cursor:pointer; }
+.ftdots { display:flex; gap:7px; margin-bottom:10px; }
+.ftdots .fdot { width:13px; height:13px; border-radius:50%; border:2px solid #8C7B63; background:transparent; }
+.ftdots .fdot.done { background:#8C7B63; }
+.ftdots .fdot.cur { border-color:#B15511; box-shadow:0 0 0 3px rgba(177,85,17,.18); animation:ftpulse 1.4s ease-in-out infinite; }
+@keyframes ftpulse { 0%,100%{ box-shadow:0 0 0 3px rgba(177,85,17,.14);} 50%{ box-shadow:0 0 0 6px rgba(177,85,17,.05);} }
+.ftrun { text-align:center; }
+.ftcount { font-family:'Space Mono',monospace; font-weight:700; font-size:38px; line-height:1; color:var(--ink); }
+.ftlabel { font-family:'Space Mono',monospace; font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin:4px 0 10px; }
+.ftbar { height:7px; background:var(--line); border-radius:20px; overflow:hidden; margin-bottom:10px; }
+.ftbar span { display:block; height:100%; border-radius:20px; background:#B15511; transition:width .3s linear; }
+.ftdue { text-align:center; }
+.ftduetitle { font-family:'Fraunces',serif; font-weight:600; font-size:19px; color:#B15511; margin-bottom:8px; }
+.ftdonebox { text-align:center; }
+.ftdonetitle { font-family:'Fraunces',serif; font-weight:600; font-size:17px; color:#5F7A2C; margin-bottom:3px; }
+.ftdonesub { font-size:12.5px; color:var(--muted); line-height:1.45; margin-bottom:10px; }
 .detail { margin-top:10px; padding:11px 13px; border-radius:10px; border-left:3px solid; font-size:13px; line-height:1.55; color:var(--ink); white-space:pre-line; }
-.card.bake { border-color:#E8B98C; box-shadow:0 1px 0 #E8B98C, 0 6px 18px -10px rgba(194,65,12,.5); background:linear-gradient(180deg,#FDF3EA,var(--card)); }
+.card.bake .body { border-color:#E8B98C; box-shadow:0 1px 0 #E8B98C, 0 6px 18px -10px rgba(194,65,12,.5); background:linear-gradient(180deg,#FDF3EA,var(--card)); }
 .foot { margin-top:26px; text-align:center; font-size:12px; color:var(--muted); font-family:'Space Mono',monospace; letter-spacing:.02em; }
 @media (prefers-reduced-motion: reduce) { * { transition:none !important; } }
 `;
