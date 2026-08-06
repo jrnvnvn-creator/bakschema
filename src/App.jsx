@@ -477,15 +477,17 @@ export default function BakeSchedule() {
     if (lt === "boule" || lt === "volkoren") return s.type === "boule";
     return s.type === lt;
   };
+  const laneVisible = (lt) => effFilter === "alles" || lt === effFilter;
   const instanceKeys = [];
   ["start", "bake"].forEach((dayKey) => {
     const ds = STEPS.filter((s) => s.cluster === dayKey && countOK(s) && matches(s));
     if (!ds.length) return;
-    const lts = LANE_ORDER.filter((lt) => laneActiveFn(lt) && ds.some((s) => stepInLane(s, lt)));
-    const laneMode = lts.length >= 2;
+    const lts = LANE_ORDER.filter((lt) => laneActiveFn(lt) && laneVisible(lt) && ds.some((s) => stepInLane(s, lt)));
+    const laneMode = lts.length >= 2 || (lts.length >= 1 && effFilter !== "alles");
     ds.forEach((s) => {
-      if (!laneMode || (s.type === "beide" && s.fullWidth)) { instanceKeys.push(s.id); return; }
-      lts.forEach((lt, i) => { if (stepInLane(s, lt)) instanceKeys.push(`${s.id}#${i + 1}`); });
+      if (!laneMode) { instanceKeys.push(s.id); return; }
+      if (s.type === "beide" && s.fullWidth) { instanceKeys.push(s.id); return; }
+      lts.forEach((lt) => { if (stepInLane(s, lt)) instanceKeys.push(`${s.id}#${lt}`); });
     });
   });
   const total = instanceKeys.length;
@@ -852,9 +854,9 @@ export default function BakeSchedule() {
           );
         };
 
-        const laneTypes = LANE_ORDER.filter((lt) => laneActiveFn(lt) && daySteps.some((s) => stepInLane(s, lt)));
+        const laneTypes = LANE_ORDER.filter((lt) => laneActiveFn(lt) && laneVisible(lt) && daySteps.some((s) => stepInLane(s, lt)));
         const nLanes = laneTypes.length;
-        const laneMode = nLanes >= 2;
+        const laneMode = nLanes >= 2 || (nLanes >= 1 && effFilter !== "alles");
         const isBake = day.key === "bake";
         const finishTime = isBake && finishOff != null ? fmt(bakeStart + finishOff) : null;
         let firstLeanCol = 1;
@@ -924,9 +926,9 @@ export default function BakeSchedule() {
                     if (it.kind === "shared") return <div key={idx} className="sharedwrap" style={{ gridColumn: "1 / -1", gridRow: it.row }}>{renderCard(it.s)}</div>;
                     if (it.kind === "wait") return <div key={idx} className="lanewaitrow" style={{ gridColumn: it.col, gridRow: it.row }}><span className="lanewaitpill"><ClockIcon />{fmtDur(it.gap)}</span></div>;
                     const s = it.s;
-                    const ikey = `${s.id}#${it.col}`;
-                    const isOpen = !!openInfo[ikey];
                     const laneOfCol = laneTypes[it.col - 1];
+                    const ikey = `${s.id}#${laneOfCol}`;
+                    const isOpen = !!openInfo[ikey];
                     const ingType = (s.type === "beide" || s.type === "boule") ? laneOfCol : null;
                     const showTimer = s.id === "s3" ? it.col === firstLeanCol : true;
                     return <div key={idx} style={{ gridColumn: isOpen ? "1 / -1" : it.col, gridRow: it.row, zIndex: isOpen ? 6 : 1, minWidth: 0 }}>{renderCard(s, { ikey, ingType, showTimer })}</div>;
