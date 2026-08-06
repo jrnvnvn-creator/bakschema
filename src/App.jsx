@@ -793,21 +793,20 @@ export default function BakeSchedule() {
                 {isDone ? <span className="donedot" /> : <ActIcon a={act} />}
               </span>
               <button className={"infobtn" + (isOpen ? " open" : "")}
-                onClick={(e) => { e.stopPropagation(); toggleInfo(ikey); }}
-                aria-label={isOpen ? "Verberg uitleg" : "Toon uitleg"} aria-expanded={isOpen}
+                onClick={(e) => { e.stopPropagation(); if (isDone) toggle(ikey); else toggleInfo(ikey); }}
+                aria-label={isDone ? "Vink uit" : (isOpen ? "Verberg uitleg" : "Toon uitleg")} aria-expanded={isOpen}
                 style={isOpen ? { background: t.ink, borderColor: t.ink, color: "#fff" } : { color: t.ink, borderColor: t.ink }}>i</button>
               <div className="body">
                 <div className="cardtop">
                   <span className="time">{timeLabel(s)}</span>
                   <span className="badge" style={{ background: t.tint, color: t.ink }}>{opts.ingType ? TYPES[opts.ingType].label : t.label}</span>
-                  <span className="actlabel">{ACT_META[act]}</span>
                   {s.bake && <span className="ovenlabel">in de oven</span>}
                 </div>
                 <div className="title">{s.title}</div>
-                {ing.length > 0 && <ul className="ing">{ing.map((i, k2) => <li key={k2}>{i}</li>)}</ul>}
-                {s.note && <div className="note">{s.note}</div>}
-                {proof && <div className="proofline" style={{ background: t.tint, color: t.ink }}>{proof}</div>}
-                {s.id === "s3" && showTimer && (
+                {isOpen && ing.length > 0 && <ul className="ing">{ing.map((i, k2) => <li key={k2}>{i}</li>)}</ul>}
+                {isOpen && s.note && <div className="note">{s.note}</div>}
+                {isOpen && proof && <div className="proofline" style={{ background: t.tint, color: t.ink }}>{proof}</div>}
+                {s.id === "s3" && showTimer && (isOpen || foldT.started) && (
                   <div className="ftwrap" onClick={(e) => e.stopPropagation()}>
                     {!foldT.started && (
                       <button className="ftbtn" onClick={startFolds}>Start folds — interval ~{foldEvery} min</button>
