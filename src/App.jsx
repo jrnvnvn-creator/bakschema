@@ -15,6 +15,10 @@ const uid = () => "t" + Math.random().toString(36).slice(2, 8);
 
 const REF_TEMP = 22;
 const STORAGE_KEY = "desem-bake-v5";
+const store = {
+  get(key) { try { const raw = localStorage.getItem(key); return raw ? { value: raw } : null; } catch (e) { return null; } },
+  set(key, value) { try { localStorage.setItem(key, value); } catch (e) {} },
+};
 const LIB_VERSION = 3;
 
 const ACT_META = { take: "Uit de koeling / bijkomen", mix: "Mengen / kneden", fold: "Vouwen (folds)", fridge: "Koelkast (koude bulk)", rest: "Rijzen / wachten", shape: "Vormen", device: "Apparaat aan", bake: "Bakken" };
@@ -280,8 +284,8 @@ export default function BakeSchedule() {
   useEffect(() => {
     (async () => {
       try {
-        if (typeof window !== "undefined" && window.storage) {
-          const r = await window.storage.get(STORAGE_KEY, false);
+        if (typeof window !== "undefined") {
+          const r = store.get(STORAGE_KEY, false);
           if (r && r.value) {
             const v = JSON.parse(r.value);
             if (Array.isArray(v.library) && v.library.length) {
@@ -308,8 +312,8 @@ export default function BakeSchedule() {
     if (!loaded) return;
     (async () => {
       try {
-        if (typeof window !== "undefined" && window.storage) {
-          await window.storage.set(STORAGE_KEY, JSON.stringify({ libVersion: LIB_VERSION, library, counts, done, temp, startDayIdx, bakeDayIdx, startStr, bakeStr, bundle, sessions, foldT }), false);
+        if (typeof window !== "undefined") {
+          store.set(STORAGE_KEY, JSON.stringify({ libVersion: LIB_VERSION, library, counts, done, temp, startDayIdx, bakeDayIdx, startStr, bakeStr, bundle, sessions, foldT }), false);
         }
       } catch (e) {}
     })();
