@@ -15,6 +15,7 @@ const uid = () => "t" + Math.random().toString(36).slice(2, 8);
 
 const REF_TEMP = 22;
 const STORAGE_KEY = "desem-bake-v5";
+const LIB_VERSION = 3;
 
 const ACT_META = { take: "Uit de koeling / bijkomen", mix: "Mengen / kneden", fold: "Vouwen (folds)", fridge: "Koelkast (koude bulk)", rest: "Rijzen / wachten", shape: "Vormen", device: "Apparaat aan", bake: "Bakken" };
 const ACT_COLOR = { take: "#C58A5A", mix: "#B0863A", fold: "#7E6BB0", fridge: "#3E9BC0", rest: "#9A8F7E", shape: "#6E8F3A", device: "#5B6E8A", bake: "#D64530" };
@@ -56,7 +57,18 @@ const DEFAULT_LIBRARY = [
   {
     id: "focaccia", label: "Focaccia", ink: "#5F7A2C", tint: "#E7ECD4", node: "#5F7A2C",
     unit: "plaat", useHyd: true, flour: 500, hyd: 74, bass: 0.24, levain: 100, levainMulti: 65, max: 4,
-    ing: [{ name: "tipo 00", g: 300 }, { name: "manitoba", g: 100 }, { name: "semolina", g: 100 }, { name: "olijfolie (deeg)", g: 30 }, { name: "honing", g: 7 }, { name: "zout", g: 10 }, { name: "pekel: water", g: 40 }, { name: "pekel: olijfolie", g: 30 }],
+    waterPhase: "s1", bassPhase: "s2", levainPhase: "s2",
+    ing: [
+      { name: "tipo 00", g: 300, group: "Bloem/meel", phase: "s1" },
+      { name: "manitoba", g: 100, group: "Bloem/meel", phase: "s1" },
+      { name: "semolina", g: 100, group: "Bloem/meel", phase: "s1" },
+      { name: "honing", g: 7, group: "Zoet", phase: "s2" },
+      { name: "zout", g: 10, group: "Zout", phase: "s2" },
+      { name: "olijfolie (deeg)", g: 30, group: "Vet", phase: "s3" },
+      { name: "water", g: 40, group: "Pekel", phase: "f2" },
+      { name: "olijfolie", g: 30, group: "Pekel", phase: "f2" },
+      { name: "zout", g: 2, group: "Pekel", phase: "f2" },
+    ],
     startSteps: LEAN_START,
     bakeSteps: [
       { id: "f1", title: "Uit koeling → geoliede plaat", act: "take", gap: 190, scale: true,
@@ -73,7 +85,14 @@ const DEFAULT_LIBRARY = [
   {
     id: "boule", label: "Boules", ink: "#B15511", tint: "#F5E6D2", node: "#B15511",
     unit: "boule", useHyd: true, flour: 450, hyd: 78, bass: 0.07, levain: 90, levainMulti: 60, max: 8,
-    ing: [{ name: "T65", g: 300 }, { name: "manitoba", g: 75 }, { name: "spelt", g: 50 }, { name: "rogge", g: 25 }, { name: "zout", g: 10 }],
+    waterPhase: "s1", bassPhase: "s2", levainPhase: "s2",
+    ing: [
+      { name: "T65", g: 300, group: "Bloem/meel", phase: "s1" },
+      { name: "manitoba", g: 75, group: "Bloem/meel", phase: "s1" },
+      { name: "spelt", g: 50, group: "Bloem/meel", phase: "s1" },
+      { name: "rogge", g: 25, group: "Bloem/meel", phase: "s1" },
+      { name: "zout", g: 10, group: "Zout", phase: "s2" },
+    ],
     startSteps: LEAN_START,
     bakeSteps: [
       { id: "b1", title: "Uit koeling", act: "take", gap: 45, scale: false,
@@ -93,7 +112,13 @@ const DEFAULT_LIBRARY = [
   {
     id: "volkoren", label: "Volkoren", ink: "#6B4A2B", tint: "#E7DBC9", node: "#6B4A2B",
     unit: "boule", useHyd: true, flour: 450, hyd: 82, bass: 0.10, levain: 90, levainMulti: 60, max: 4,
-    ing: [{ name: "volkoren", g: 300 }, { name: "manitoba", g: 100 }, { name: "spelt", g: 50 }, { name: "zout", g: 10 }],
+    waterPhase: "s1", bassPhase: "s2", levainPhase: "s2",
+    ing: [
+      { name: "volkoren", g: 300, group: "Bloem/meel", phase: "s1" },
+      { name: "manitoba", g: 100, group: "Bloem/meel", phase: "s1" },
+      { name: "spelt", g: 50, group: "Bloem/meel", phase: "s1" },
+      { name: "zout", g: 10, group: "Zout", phase: "s2" },
+    ],
     startSteps: LEAN_START,
     bakeSteps: [
       { id: "v1", title: "Uit koeling", act: "take", gap: 45, scale: false,
@@ -113,7 +138,13 @@ const DEFAULT_LIBRARY = [
   {
     id: "pita", label: "Pita's", ink: "#C0872E", tint: "#F2E6C8", node: "#C0872E",
     unit: "stuk", useHyd: true, flour: 60, hyd: 65, bass: 0.05, levain: 11, levainMulti: 8, max: 12,
-    ing: [{ name: "T65", g: 50 }, { name: "manitoba", g: 10 }, { name: "olijfolie", g: 2 }, { name: "zout", g: 1 }],
+    waterPhase: "s1", bassPhase: "s2", levainPhase: "s2",
+    ing: [
+      { name: "T65", g: 50, group: "Bloem/meel", phase: "s1" },
+      { name: "manitoba", g: 10, group: "Bloem/meel", phase: "s1" },
+      { name: "zout", g: 1, group: "Zout", phase: "s2" },
+      { name: "olijfolie", g: 2, group: "Vet", phase: "s2" },
+    ],
     startSteps: LEAN_START,
     bakeSteps: [
       { id: "p1", title: "Uit koeling", act: "take", gap: 40, scale: false,
@@ -136,7 +167,15 @@ const DEFAULT_LIBRARY = [
   {
     id: "worst", label: "Worstenbroodjes", ink: "#9E3B2E", tint: "#F1D9D3", node: "#9E3B2E",
     unit: "stuk", useHyd: false, flour: 50, hyd: 0, bass: 0, levain: 10, levainMulti: 7, max: 12,
-    ing: [{ name: "bloem", g: 50 }, { name: "melk", g: 18 }, { name: "ei", g: 6 }, { name: "boter", g: 5 }, { name: "suiker", g: 3 }, { name: "zout", g: 1 }],
+    waterPhase: null, bassPhase: null, levainPhase: "w1",
+    ing: [
+      { name: "bloem", g: 50, group: "Bloem/meel", phase: "w1" },
+      { name: "melk", g: 18, group: "Zuivel/ei", phase: "w1" },
+      { name: "ei", g: 6, group: "Zuivel/ei", phase: "w1" },
+      { name: "suiker", g: 3, group: "Zoet", phase: "w1" },
+      { name: "zout", g: 1, group: "Zout", phase: "w1" },
+      { name: "boter", g: 5, group: "Vet", phase: "w1" },
+    ],
     startSteps: [
       { id: "w1", title: "Deeg kneden + verrijken", act: "mix", gap: 45, scale: false,
         note: "Kneed tot glutenvenster; boter er ná de eerste ontwikkeling in.",
@@ -170,6 +209,34 @@ const OVEN_STEP = { id: "oven", title: "Oven voorverwarmen", act: "device", shar
   detail: "Verwarm de oven mét de gietijzeren pan of baksteen 45–60 min voor. Die massa moet écht gloeiend heet zijn — dat geeft de ovenveer. Steamoven: zet 100 % stoom klaar voor de eerste fase." };
 
 const cloneLib = (lib) => JSON.parse(JSON.stringify(lib));
+
+// Oudere opslag kende nog geen groepen/stap-koppeling: overnemen uit de standaard.
+const GUESS_GROUP = (name) => {
+  const n = String(name).toLowerCase();
+  if (/(bloem|meel|tipo|manitoba|semolina|spelt|rogge|t65|volkoren)/.test(n)) return "Bloem/meel";
+  if (/pekel/.test(n)) return "Pekel";
+  if (/(water)/.test(n)) return "Water";
+  if (/(zout)/.test(n)) return "Zout";
+  if (/(olie|boter|vet)/.test(n)) return "Vet";
+  if (/(suiker|honing)/.test(n)) return "Zoet";
+  if (/(melk|ei|yoghurt)/.test(n)) return "Zuivel/ei";
+  return "Overig";
+};
+const migrateLib = (lib) => lib.map((t) => {
+  const def = DEFAULT_LIBRARY.find((d) => d.id === t.id);
+  if (def) return cloneLib([def])[0];
+  const first = (t.startSteps && t.startSteps[0] && t.startSteps[0].id) || null;
+  return {
+    ...t,
+    waterPhase: t.waterPhase || first, bassPhase: t.bassPhase || first, levainPhase: t.levainPhase || first,
+    ing: (t.ing || []).map((x) => ({
+      ...x,
+      name: String(x.name).replace(/^pekel:\s*/i, ""),
+      group: x.group || GUESS_GROUP(x.name),
+      phase: x.phase || first,
+    })),
+  };
+});
 const FOLDS = 4;
 
 export default function BakeSchedule() {
@@ -217,7 +284,10 @@ export default function BakeSchedule() {
           const r = await window.storage.get(STORAGE_KEY, false);
           if (r && r.value) {
             const v = JSON.parse(r.value);
-            if (Array.isArray(v.library) && v.library.length) setLibrary(v.library);
+            if (Array.isArray(v.library) && v.library.length) {
+              if (v.libVersion === LIB_VERSION) setLibrary(v.library);
+              else setLibrary(migrateLib(v.library));
+            }
             if (v.counts) setCounts(v.counts);
             if (v.done) setDone(v.done);
             if (v.temp) setTemp(v.temp);
@@ -239,7 +309,7 @@ export default function BakeSchedule() {
     (async () => {
       try {
         if (typeof window !== "undefined" && window.storage) {
-          await window.storage.set(STORAGE_KEY, JSON.stringify({ library, counts, done, temp, startDayIdx, bakeDayIdx, startStr, bakeStr, bundle, sessions, foldT }), false);
+          await window.storage.set(STORAGE_KEY, JSON.stringify({ libVersion: LIB_VERSION, library, counts, done, temp, startDayIdx, bakeDayIdx, startStr, bakeStr, bundle, sessions, foldT }), false);
         }
       } catch (e) {}
     })();
@@ -343,7 +413,7 @@ export default function BakeSchedule() {
     setDone((d) => ({ ...d, [key]: !d[key] }));
     if (will) setOpenInfo((o) => { if (!o[key]) return o; const n = { ...o }; delete n[key]; return n; });
   };
-  const toggleInfo = (key) => setOpenInfo((o) => ({ ...o, [key]: !o[key] }));
+  const toggleInfo = (key) => setOpenInfo((o) => (o[key] ? {} : { [key]: true }));
 
   const foldEvery = clamp(round15((active.find((t) => (t.startSteps || []).some((s) => s.act === "fold")) ? g((active.find((t) => (t.startSteps || []).some((s) => s.act === "fold")).startSteps.find((s) => s.act === "fold"))) : 120) / FOLDS), 15, 60);
   const startFolds = () => setFoldT({ started: true, currentFold: 1, target: null, phase: "due" });
@@ -408,19 +478,51 @@ export default function BakeSchedule() {
   const resetLibrary = () => setLibrary(cloneLib(DEFAULT_LIBRARY));
   const isDefault = (id) => DEFAULT_LIBRARY.some((t) => t.id === id);
 
-  // ── ingrediënten ────────────────────────────────────────────────────
-  const ingLines = (t) => {
+  // ── ingrediënten: per stap, gegroepeerd ─────────────────────────────
+  const GROUP_ORDER = ["Bloem/meel", "Water", "Levain", "Zout", "Vet", "Zoet", "Zuivel/ei", "Pekel", "Overig"];
+  const chainAll = (t) => [...(t.startSteps || []), ...(t.bakeSteps || [])];
+  const allIng = (t) => {
     const n = counts[t.id] || 0;
-    const lines = t.ing.map((x) => `${x.name}: ${Math.round(x.g * n)} g`);
+    const rows = t.ing.map((x) => ({ name: x.name, g: Math.round(x.g * n), group: x.group || "Overig", phase: x.phase }));
     if (t.useHyd) {
       const water = Math.round((t.flour * t.hyd / 100) * n);
       const bass = Math.round(water * (t.bass || 0));
-      lines.push(`water (autolyse): ${water - bass} g`);
-      if (bass > 0) lines.push(`bassinage: ${bass} g`);
+      rows.push({ name: "water", g: water - bass, group: "Water", phase: t.waterPhase });
+      if (bass > 0) rows.push({ name: "bassinage-water", g: bass, group: "Water", phase: t.bassPhase });
     }
-    lines.push(`levain: ${Math.round(levOf(t) * n)} g`);
-    return lines;
+    rows.push({ name: "levain", g: Math.round(levOf(t) * n), group: "Levain", phase: t.levainPhase });
+    return rows.filter((r) => r.g > 0);
   };
+  const groupRows = (rows) => {
+    const map = {};
+    rows.forEach((r) => { (map[r.group] = map[r.group] || []).push(r); });
+    return Object.keys(map)
+      .sort((a, b) => (GROUP_ORDER.indexOf(a) + 99 * (GROUP_ORDER.indexOf(a) < 0)) - (GROUP_ORDER.indexOf(b) + 99 * (GROUP_ORDER.indexOf(b) < 0)))
+      .map((gname) => ({ group: gname, total: map[gname].reduce((s, r) => s + r.g, 0), items: map[gname] }));
+  };
+  const ingForStep = (t, stepId) => groupRows(allIng(t).filter((r) => r.phase === stepId));
+  const carryFor = (t, stepId) => {
+    const chain = chainAll(t);
+    const idx = chain.findIndex((s) => s.id === stepId);
+    if (idx <= 0) return null;
+    const before = chain.slice(0, idx);
+    const rows = allIng(t).filter((r) => before.some((s) => s.id === r.phase));
+    if (!rows.length) return null;
+    const prev = [...before].reverse().find((s) => allIng(t).some((r) => r.phase === s.id));
+    return { title: prev ? prev.title : "vorige stappen", total: rows.reduce((s, r) => s + r.g, 0) };
+  };
+
+  const levainTotal = active.reduce((s, t) => s + Math.round(levOf(t) * (counts[t.id] || 0)), 0);
+  const levainKeep = 60;
+  const feedEach = Math.ceil((levainTotal + levainKeep) / 3 / 5) * 5;
+  const peakMin = round15(clamp(330 * k, 180, 720));
+  const levainStepAt = (() => {
+    const t = active.find((x) => x.levainPhase && chainAll(x).some((s) => s.id === x.levainPhase));
+    if (!t) return null;
+    const inStart = (t.startSteps || []).some((s) => s.id === t.levainPhase);
+    return (inStart ? startMin : bakeStart) + offOf(t, inStart ? "startSteps" : "bakeSteps", t.levainPhase);
+  })();
+  const feedAt = levainStepAt != null ? levainStepAt - peakMin : null;
 
   const Stepper = ({ label, value, set, min, max, ink }) => (
     <div className="stepper">
@@ -458,7 +560,24 @@ export default function BakeSchedule() {
           </div>
           <div className="title">{st.title}</div>
           {isOpen && st.note && <div className="note">{st.note}</div>}
-          {isOpen && ingLines(t).length > 0 && st.act === "mix" && <ul className="ing">{ingLines(t).map((l, i) => <li key={i}>{l}</li>)}</ul>}
+          {isOpen && (() => {
+            const groups = ingForStep(t, st.id);
+            const carry = carryFor(t, st.id);
+            if (!groups.length && !carry) return null;
+            return (
+              <div className="ingtree">
+                {carry && groups.length > 0 && (
+                  <div className="ggroup carry"><span className="gname">uit “{carry.title}”</span><span className="gtot">{carry.total} g</span></div>
+                )}
+                {groups.map((gr) => (
+                  <div key={gr.group} className="ggroup">
+                    <div className="ghead"><span className="gname">{gr.group}</span><span className="gtot">{gr.total} g</span></div>
+                    <ul className="glist">{gr.items.map((it, i) => <li key={i}><span>{it.name}</span><span>{it.g} g</span></li>)}</ul>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
           {st.act === "fold" && (isOpen || foldT.started) && (
             <div className="ftwrap" onClick={(e) => e.stopPropagation()}>
               {!foldT.started && <button className="ftbtn" onClick={startFolds}>Start folds — elke ~{foldEvery} min</button>}
@@ -609,9 +728,14 @@ export default function BakeSchedule() {
   const editing = library.find((t) => t.id === editId);
   const unselected = library.filter((t) => !(counts[t.id] > 0));
 
+  const anyOpen = Object.keys(openInfo).some((kk) => openInfo[kk]);
+
   return (
     <div className="wrap">
       <style>{CSS}</style>
+      {(anyOpen || showIng || showLog || showLegend || showLib) && (
+        <div className="scrim" onClick={() => { setOpenInfo({}); setShowIng(false); setShowLog(false); setShowLegend(false); setShowLib(false); }} />
+      )}
 
       <header className="head">
         <h1>Bakschema</h1>
@@ -630,7 +754,7 @@ export default function BakeSchedule() {
       </div>
 
       {showLib && (
-        <div className="libpanel">
+        <div className="libpanel elevated">
           {!editing && (
             <>
               <div className="libhead">
@@ -682,15 +806,45 @@ export default function BakeSchedule() {
                 </label>
               </div>
 
-              <div className="subhead">Ingrediënten per stuk</div>
+              <div className="subhead">Ingrediënten per stuk — groep &amp; bij welke stap</div>
               {editing.ing.map((x, i) => (
-                <div key={i} className="ingrow">
-                  <input className="inp" value={x.name} onChange={(e) => upIng(editing.id, i, { name: e.target.value })} />
-                  <input className="inp narrow" type="number" value={x.g} onChange={(e) => upIng(editing.id, i, { g: Number(e.target.value) })} />
-                  <button className="minibtn danger" onClick={() => delIng(editing.id, i)}>×</button>
+                <div key={i} className="ingedit">
+                  <div className="ingeditrow">
+                    <input className="inp" value={x.name} onChange={(e) => upIng(editing.id, i, { name: e.target.value })} />
+                    <input className="inp narrow" type="number" value={x.g} onChange={(e) => upIng(editing.id, i, { g: Number(e.target.value) })} />
+                    <button className="minibtn danger" onClick={() => delIng(editing.id, i)}>×</button>
+                  </div>
+                  <div className="ingeditrow">
+                    <select className="select small" value={x.group || "Overig"} onChange={(e) => upIng(editing.id, i, { group: e.target.value })}>
+                      {GROUP_ORDER.map((gn) => <option key={gn} value={gn}>{gn}</option>)}
+                    </select>
+                    <select className="select small" value={x.phase || ""} onChange={(e) => upIng(editing.id, i, { phase: e.target.value })}>
+                      <option value="">— bij welke stap —</option>
+                      {chainAll(editing).map((s) => <option key={s.id} value={s.id}>{s.title}</option>)}
+                    </select>
+                  </div>
                 </div>
               ))}
               <button className="minibtn" onClick={() => addIng(editing.id)}>+ Ingrediënt</button>
+              {editing.useHyd && (
+                <div className="fldrow" style={{ marginTop: "10px" }}>
+                  <label className="fld"><span>Water bij stap</span>
+                    <select className="select small" value={editing.waterPhase || ""} onChange={(e) => upType(editing.id, { waterPhase: e.target.value })}>
+                      {chainAll(editing).map((s) => <option key={s.id} value={s.id}>{s.title}</option>)}
+                    </select>
+                  </label>
+                  <label className="fld"><span>Bassinage bij stap</span>
+                    <select className="select small" value={editing.bassPhase || ""} onChange={(e) => upType(editing.id, { bassPhase: e.target.value })}>
+                      {chainAll(editing).map((s) => <option key={s.id} value={s.id}>{s.title}</option>)}
+                    </select>
+                  </label>
+                  <label className="fld"><span>Levain bij stap</span>
+                    <select className="select small" value={editing.levainPhase || ""} onChange={(e) => upType(editing.id, { levainPhase: e.target.value })}>
+                      {chainAll(editing).map((s) => <option key={s.id} value={s.id}>{s.title}</option>)}
+                    </select>
+                  </label>
+                </div>
+              )}
 
               {["startSteps", "bakeSteps"].map((which) => (
                 <div key={which}>
@@ -859,19 +1013,44 @@ export default function BakeSchedule() {
       </div>
 
       {showIng && (
-        <div className="ingpanel">
+        <div className="ingpanel elevated">
           {active.length === 0 && <p className="hint">Nog geen deeg gekozen.</p>}
+          {levainTotal > 0 && (
+            <div className="levbox">
+              <div className="levtop"><span className="levlabel">Levain totaal</span><span className="levbig">{levainTotal} g</span></div>
+              <p className="levtext">
+                Voed <b>{feedEach} g</b> starter met <b>{feedEach} g</b> water en <b>{feedEach} g</b> bloem (1:1:1) → ~{feedEach * 3} g.
+                Dat is {levainTotal} g voor het deeg plus ~{levainKeep} g om terug te zetten in de koelkast.
+              </p>
+              {feedAt != null && (
+                <p className="levtext">
+                  Voeden rond <b>{fmt(feedAt)}</b> — bij {temp} °C piekt 1:1:1 in ~{fmtDur(peakMin)}, en om <b>{fmt(levainStepAt)}</b> gaat de levain in het deeg.
+                  {feedAt < 0 && <> Dat valt de avond ervóór.</>}
+                </p>
+              )}
+            </div>
+          )}
           {active.map((t) => (
-            <div key={t.id} className="ingblock">
-              <div className="ingtitle" style={{ color: t.ink }}>{t.label} — {counts[t.id]}× </div>
-              <ul className="ing">{ingLines(t).map((l, i) => <li key={i}>{l}</li>)}</ul>
+            <div key={t.id} className="typeblock" style={{ background: t.tint, borderColor: t.node }}>
+              <div className="typetop">
+                <span className="typename" style={{ color: t.ink }}>{t.label}</span>
+                <span className="typecount" style={{ color: t.ink }}>{counts[t.id]}×</span>
+              </div>
+              <div className="ingtree">
+                {groupRows(allIng(t)).map((gr) => (
+                  <div key={gr.group} className="ggroup">
+                    <div className="ghead"><span className="gname">{gr.group}</span><span className="gtot">{gr.total} g</span></div>
+                    <ul className="glist">{gr.items.map((it, i) => <li key={i}><span>{it.name}</span><span>{it.g} g</span></li>)}</ul>
+                  </div>
+                ))}
+              </div>
             </div>
           ))}
         </div>
       )}
 
       {showLog && (
-        <div className="logpanel">
+        <div className="logpanel elevated">
           {sessions.length === 0 && <p className="logempty">Nog geen sessies opgeslagen.</p>}
           {sessions.map((s) => (
             <div key={s.id} className="logitem">
@@ -890,7 +1069,7 @@ export default function BakeSchedule() {
       )}
 
       {showLegend && (
-        <div className="legendpanel">
+        <div className="legendpanel elevated">
           <div className="legcol">
             <div className="leghead">Handelingen</div>
             {ACT_LEGEND.map((a) => <div key={a} className="legrow"><span className="legicon" style={{ color: ACT_COLOR[a] }}><ActIcon a={a} /></span>{ACT_META[a]}</div>)}
@@ -1009,6 +1188,32 @@ h1 { font-family:'Fraunces',serif; font-weight:600; font-size:30px; margin:0 0 4
 .ingblock { margin-bottom:12px; }
 .ingtitle { font-family:'Fraunces',serif; font-weight:600; font-size:15px; margin-bottom:4px; }
 .ing { margin:4px 0 0; padding-left:16px; font-size:13px; color:var(--muted); line-height:1.6; }
+.ingtree { margin-top:8px; }
+.ggroup { margin-bottom:8px; }
+.ggroup.carry { display:flex; justify-content:space-between; align-items:center; background:var(--paper); border:1px dashed var(--line); border-radius:8px; padding:6px 10px; font-size:12.5px; color:var(--muted); }
+.ggroup.carry .gname { font-style:italic; }
+.ghead { display:flex; justify-content:space-between; align-items:baseline; border-bottom:1px solid var(--line); padding-bottom:3px; }
+.gname { font-family:'Space Mono',monospace; font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
+.gtot { font-family:'Space Mono',monospace; font-size:12px; font-weight:700; color:var(--ink); }
+.glist { list-style:none; margin:4px 0 0; padding:0; }
+.glist li { display:flex; justify-content:space-between; font-size:13px; line-height:1.7; color:var(--ink); }
+.glist li span:last-child { font-family:'Space Mono',monospace; font-size:12px; color:var(--muted); }
+.levbox { background:#F5E6D2; border:1px solid #E4B183; border-radius:12px; padding:12px; margin-bottom:14px; }
+.levtop { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px; }
+.levlabel { font-family:'Space Mono',monospace; font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:#8a5a2b; }
+.levbig { font-family:'Fraunces',serif; font-weight:600; font-size:24px; color:#B15511; }
+.levtext { font-size:12.5px; line-height:1.55; color:var(--ink); margin:4px 0 0; }
+.ingedit { border:1px solid var(--line); border-radius:10px; padding:8px; margin-bottom:7px; background:var(--paper); }
+.scrim { position:fixed; inset:0; z-index:5; background:rgba(245,239,226,.45); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); }
+.elevated { position:relative; z-index:6; box-shadow:0 14px 40px -16px rgba(42,33,26,.45); }
+.typeblock { border:1px solid; border-radius:12px; padding:12px; margin-bottom:12px; }
+.typetop { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px; }
+.typename { font-family:'Fraunces',serif; font-weight:600; font-size:17px; }
+.typecount { font-family:'Space Mono',monospace; font-size:13px; font-weight:700; }
+.typeblock .ghead { border-bottom-color:rgba(42,33,26,.15); }
+.typeblock .gtot, .typeblock .glist li { color:var(--ink); }
+.ingeditrow { display:flex; gap:6px; margin-bottom:6px; }
+.ingeditrow:last-child { margin-bottom:0; }
 .logempty { font-size:12.5px; color:var(--muted); font-style:italic; }
 .logitem { border-left:3px solid var(--line); padding:2px 0 8px 12px; margin-bottom:10px; }
 .logtop { display:flex; justify-content:space-between; align-items:center; }
