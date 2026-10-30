@@ -19,7 +19,7 @@ const store = {
   get(key) { try { const raw = localStorage.getItem(key); return raw ? { value: raw } : null; } catch (e) { return null; } },
   set(key, value) { try { localStorage.setItem(key, value); } catch (e) {} },
 };
-const LIB_VERSION = 3;
+const LIB_VERSION = 4;
 
 const ACT_META = { take: "Uit de koeling / bijkomen", mix: "Mengen / kneden", fold: "Vouwen (folds)", fridge: "Koelkast (koude bulk)", rest: "Rijzen / wachten", shape: "Vormen", device: "Apparaat aan", bake: "Bakken" };
 const ACT_COLOR = { take: "#C58A5A", mix: "#B0863A", fold: "#7E6BB0", fridge: "#3E9BC0", rest: "#9A8F7E", shape: "#6E8F3A", device: "#5B6E8A", bake: "#D64530" };
@@ -204,6 +204,56 @@ const DEFAULT_LIBRARY = [
       { id: "w7", title: "Eiwash + bakken", act: "bake", bake: true, dur: 30,
         note: "Bestrijken met ei · 200 °C · 18–22 min goudbruin.",
         detail: "Bestrijk met losgeklopt ei voor een glanzende korst. Bak op ~200 °C, 18–22 min — bewust lager dan lean brood, want ei en suiker kleuren snel. Ze vriezen goed in." },
+    ],
+  },
+  {
+    id: "babka", label: "Babka", ink: "#7A4458", tint: "#EFDCE2", node: "#7A4458",
+    unit: "blik", useHyd: false, flour: 310, hyd: 0, bass: 0, levain: 138, levainMulti: 95, max: 3,
+    waterPhase: null, bassPhase: null, levainPhase: "k1",
+    ing: [
+      { name: "patentbloem (11–12% eiwit)", g: 310, group: "Bloem/meel", phase: "k1" },
+      { name: "volle melk (koud)", g: 107, group: "Zuivel/ei", phase: "k1" },
+      { name: "ei (~2 stuks, koud)", g: 107, group: "Zuivel/ei", phase: "k1" },
+      { name: "fijne kristalsuiker", g: 29, group: "Zoet", phase: "k1" },
+      { name: "zout", g: 8, group: "Zout", phase: "k1" },
+      { name: "roomboter (kamertemp)", g: 100, group: "Vet", phase: "k1" },
+      { name: "donkerbruine basterdsuiker", g: 200, group: "Vulling", phase: "k4" },
+      { name: "roomboter, gesmolten", g: 42, group: "Vulling", phase: "k4" },
+      { name: "bloem", g: 15, group: "Vulling", phase: "k4" },
+      { name: "kaneel", g: 8, group: "Vulling", phase: "k4" },
+      { name: "zout", g: 1, group: "Vulling", phase: "k4" },
+      { name: "ei (eiwash)", g: 55, group: "Afwerking", phase: "k8" },
+      { name: "melk (eiwash)", g: 15, group: "Afwerking", phase: "k8" },
+      { name: "suiker (siroop)", g: 52, group: "Afwerking", phase: "k8" },
+      { name: "water (siroop)", g: 59, group: "Afwerking", phase: "k8" },
+    ],
+    startSteps: [
+      { id: "k1", title: "Deeg mixen + boter inwerken", act: "mix", gap: 30, scale: false,
+        note: "Mixer, deeghaak. Halve suiker vooraf, rest later. Boter pat voor pat.",
+        detail: "Bloem, melk, ei, de hélft van de suiker, zout en levain in de kom. Kort mengen tot alles is opgenomen, dan 10 min onafgedekt laten staan.\n\nDaarna op middelhoog kneden tot het deeg van de kom loslaat (op een KitchenAid op stand 2 duurt dat in de praktijk een stuk langer dan 5 min — reken op 15–20 min). Laat nu de rest van de suiker er langzaam bij lopen en kneed tot het deeg weer samenkomt.\n\nVoeg de boter toe in klontjes van ~1 cm, telkens pas de volgende als de vorige is opgenomen. Kneed door tot het deeg glad wordt en bijna het vliesje haalt. Streef naar een deegtemperatuur van 24 °C." },
+      { id: "k2", title: "Warme bulk + 2× stretch & fold", act: "fold", gap: 120, scale: true,
+        note: "23–24 °C. Vouwen na 30 en 60 min, daarna met rust laten.",
+        detail: "Twee sets vouwen is genoeg — verrijkt deeg heeft vooral kneedkracht nodig, niet veel vouwen. Na de tweede set afgedekt laten staan.\n\nAan het eind moet het deeg iets gerezen, bol en glad zijn. Zie je helemaal niets gebeuren, geef het dan 30–60 min extra voordat het de koeling in gaat." },
+      { id: "k3", title: "In de koelkast — koude bulk", act: "fridge", gap: 0, scale: false,
+        note: "Afgedekt, nacht in de koeling. Koud deeg is cruciaal voor het uitrollen.",
+        detail: "De koeling doet hier twee dingen: smaakopbouw én het stevig maken van de boter. Warm babka-deeg is vrijwel niet uit te rollen en te vullen — koud wel.\n\nVeel rijs zie je 's nachts niet, dat is normaal. Langer dan 12 uur mag prima; tot ~20 uur blijft het goed." },
+    ],
+    bakeSteps: [
+      { id: "k4", title: "Vulling maken + deeg uit koeling", act: "take", gap: 15, scale: false,
+        note: "Alle vullingsingrediënten door elkaar roeren tot een spreidbare pasta.",
+        detail: "Maak de vulling vóórdat het deeg uit de koeling komt. Alles in een kom en doorroeren tot een gelijkmatige, smeerbare massa.\n\nChocoladevariant (in plaats van kaneel): 110 g suiker, 75 g boter, 70 g pure chocolade, 25 g cacao. Smelt de boter, haal van het vuur, roer suiker en chocolade erdoor tot glad, dan de cacao. Laten afkoelen tot het de dikte van zachte pindakaas heeft." },
+      { id: "k5", title: "Uitrollen + vullen + oprollen", act: "shape", gap: 15, scale: false,
+        note: "Rechthoek ~25 × 30 cm. Strak oprollen vanaf de korte zijde.",
+        detail: "Stort het koude deeg op een bebloemd blad en rol uit tot een rechthoek van ongeveer 25 × 30 cm, korte zijde naar je toe. Wil je meer laagjes en minder dikke vullingsaders: rol langer uit, tot ~25 × 60 cm.\n\nSmeer de vulling uit en houd ~2,5 cm vrij aan de verste korte zijde. Rol vanaf je toe naar strak op en trek bij elke slag het deeg aan — losjes oprollen geeft holtes in de vlecht." },
+      { id: "k6", title: "15 min de vriezer in", act: "rest", gap: 15, scale: false,
+        note: "Rol op een bakplaat, 15 min vriezer. Niet overslaan.",
+        detail: "Dit is de stap die het verschil maakt tussen netjes vlechten en een plakkende bende. Door de korte vriesbeurt stolt de boter in de vulling en snijdt de rol schoon door." },
+      { id: "k7", title: "Snijden + vlechten → blik", act: "shape", gap: 210, scale: true,
+        note: "Rol in de lengte doorsnijden, vlechten, in beboterd blik met bakpapier.",
+        detail: "Snijd de rol met een scherp mes in de lengte volledig door, zodat de laagjes open liggen. Knijp de twee bovenkanten aan elkaar en vlecht de strengen om elkaar, snijkant zoveel mogelijk naar boven. Onderaan weer samenknijpen.\n\nLeg bakpapier in het blik met twee 'oren' over de lange zijden — daarmee til je de babka er na het bakken uit. Blik ~23 × 10 × 10 cm (Pullman) of een standaard broodblik van ~21 × 11 cm.\n\nNarijzen op ~26 °C tot het deeg tot ongeveer 1 cm onder de rand staat. Reken op 3,5–4 uur; koud uit de koeling kan het langer duren. Te ver laten gaan zakt na het bakken in." },
+      { id: "k8", title: "Eiwash + bakken", act: "bake", bake: true, dur: 45,
+        note: "175 °C boven-/onderwarmte · 40–50 min · kern 93 °C. Daarna siroop.",
+        detail: "Oven voorverwarmen op 175 °C, rooster in het midden, géén hetelucht — bij hetelucht kleurt de suiker te snel voor de kern gaar is. Zet het blik op een met bakpapier beklede bakplaat; er lekt gegarandeerd suiker uit.\n\nBestrijk met losgeklopt ei + melk en bak 40–50 min tot de kern 93 °C is. Kleurt hij te snel in de laatste 10 min, dek dan losjes af met folie of zak 10 °C.\n\nMaak ondertussen de siroop: suiker en water zachtjes verwarmen tot de suiker volledig is opgelost. Na het bakken de korte zijden losmaken met een spatel, dun insmeren met siroop, precies 10 min in het blik laten staan en er dán uittillen — langer wachten maakt hem vastplakken." },
     ],
   },
 ];
@@ -483,7 +533,7 @@ export default function BakeSchedule() {
   const isDefault = (id) => DEFAULT_LIBRARY.some((t) => t.id === id);
 
   // ── ingrediënten: per stap, gegroepeerd ─────────────────────────────
-  const GROUP_ORDER = ["Bloem/meel", "Water", "Levain", "Zout", "Vet", "Zoet", "Zuivel/ei", "Pekel", "Overig"];
+  const GROUP_ORDER = ["Bloem/meel", "Water", "Levain", "Zout", "Vet", "Zoet", "Zuivel/ei", "Pekel", "Vulling", "Afwerking", "Overig"];
   const chainAll = (t) => [...(t.startSteps || []), ...(t.bakeSteps || [])];
   const allIng = (t) => {
     const n = counts[t.id] || 0;
