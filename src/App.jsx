@@ -19,7 +19,7 @@ const store = {
   get(key) { try { const raw = localStorage.getItem(key); return raw ? { value: raw } : null; } catch (e) { return null; } },
   set(key, value) { try { localStorage.setItem(key, value); } catch (e) {} },
 };
-const LIB_VERSION = 8;
+const LIB_VERSION = 9;
 
 const ACT_META = { take: "Uit de koeling / bijkomen", mix: "Mengen / kneden", fold: "Vouwen (folds)", fridge: "Koelkast (koude bulk)", rest: "Rijzen / wachten", shape: "Vormen", device: "Apparaat aan", bake: "Bakken" };
 const ACT_COLOR = { take: "#C58A5A", mix: "#B0863A", fold: "#7E6BB0", fridge: "#3E9BC0", rest: "#9A8F7E", shape: "#6E8F3A", device: "#5B6E8A", bake: "#D64530" };
@@ -567,21 +567,33 @@ const GUESS_GROUP = (name) => {
   if (/(melk|ei|yoghurt)/.test(n)) return "Zuivel/ei";
   return "Overig";
 };
-const migrateLib = (lib) => lib.map((t) => {
-  const def = DEFAULT_LIBRARY.find((d) => d.id === t.id);
-  if (def) return cloneLib([def])[0];
-  const first = (t.startSteps && t.startSteps[0] && t.startSteps[0].id) || null;
-  return {
-    ...t,
-    waterPhase: t.waterPhase || first, bassPhase: t.bassPhase || first, levainPhase: t.levainPhase || first,
-    ing: (t.ing || []).map((x) => ({
-      ...x,
-      name: String(x.name).replace(/^pekel:\s*/i, ""),
-      group: x.group || GUESS_GROUP(x.name),
-      phase: x.phase || first,
-    })),
-  };
-});
+const addMissing = (lib) => {
+  const have = new Set((lib || []).map((t) => t.id));
+  const added = DEFAULT_LIBRARY.filter((d) => !have.has(d.id)).map((d) => cloneLib([d])[0]);
+  return added.length ? [...(lib || []), ...added] : (lib || []);
+};
+const migrateLib = (lib) => {
+  // Bestaande types bijwerken: standaardrecepten terug naar de nieuwste versie,
+  // zelfgemaakte types behouden en aanvullen met groep + stapkoppeling.
+  const kept = (lib || []).map((t) => {
+    const def = DEFAULT_LIBRARY.find((d) => d.id === t.id);
+    if (def) return cloneLib([def])[0];
+    const first = (t.startSteps && t.startSteps[0] && t.startSteps[0].id) || null;
+    return {
+      ...t,
+      coldIdeal: t.coldIdeal || 16,
+      bakeTemp: t.bakeTemp || 220,
+      waterPhase: t.waterPhase || first, bassPhase: t.bassPhase || first, levainPhase: t.levainPhase || first,
+      ing: (t.ing || []).map((x) => ({
+        ...x,
+        name: String(x.name).replace(/^pekel:\s*/i, ""),
+        group: x.group || GUESS_GROUP(x.name),
+        phase: x.phase || first,
+      })),
+    };
+  });
+  return addMissing(kept);
+};
 const FOLDS = 4;
 
 export default function BakeSchedule() {
@@ -593,6 +605,7 @@ export default function BakeSchedule() {
   const [bakeDayIdx, setBakeDayIdx] = useState(6);
   const [bakeStr, setBakeStr] = useState("09:00");
   const [bundle, setBundle] = useState(true);
+  const [showCtl, setShowCtl] = useState(true);
   const [coldMode, setColdMode] = useState("bulk");     // bulk | narijs
   const [startMode, setStartMode] = useState("tegelijk"); // tegelijk | optimaal
   const [done, setDone] = useState({});
@@ -632,7 +645,7 @@ export default function BakeSchedule() {
           if (r && r.value) {
             const v = JSON.parse(r.value);
             if (Array.isArray(v.library) && v.library.length) {
-              if (v.libVersion === LIB_VERSION) setLibrary(v.library);
+              if (v.libVersion === LIB_VERSION) setLibrary(addMissing(v.library));
               else setLibrary(migrateLib(v.library));
             }
             if (v.counts) setCounts(v.counts);
@@ -645,6 +658,7 @@ export default function BakeSchedule() {
             if (typeof v.bundle === "boolean") setBundle(v.bundle);
             if (v.coldMode) setColdMode(v.coldMode);
             if (v.startMode) setStartMode(v.startMode === "optimaal" ? "bakdag" : v.startMode);
+            if (typeof v.showCtl === "boolean") setShowCtl(v.showCtl);
             if (Array.isArray(v.sessions)) setSessions(v.sessions);
             if (v.foldT) setFoldT(v.foldT);
           }
@@ -658,11 +672,11 @@ export default function BakeSchedule() {
     (async () => {
       try {
         if (typeof window !== "undefined") {
-          store.set(STORAGE_KEY, JSON.stringify({ libVersion: LIB_VERSION, library, counts, done, temp, startDayIdx, bakeDayIdx, startStr, bakeStr, bundle, coldMode, startMode, sessions, foldT }), false);
+          store.set(STORAGE_KEY, JSON.stringify({ libVersion: LIB_VERSION, library, counts, done, temp, startDayIdx, bakeDayIdx, startStr, bakeStr, bundle, coldMode, startMode, showCtl, sessions, foldT }), false);
         }
       } catch (e) {}
     })();
-  }, [library, counts, done, temp, startDayIdx, bakeDayIdx, startStr, bakeStr, bundle, coldMode, startMode, sessions, foldT, loaded]);
+  }, [library, counts, done, temp, startDayIdx, bakeDayIdx, startStr, bakeStr, bundle, coldMode, startMode, showCtl, sessions, foldT, loaded]);
 
   useEffect(() => { if (foldT.phase !== "waiting") return; const id = setInterval(() => setNowTs(Date.now()), 250); return () => clearInterval(id); }, [foldT.phase]);
   useEffect(() => {
@@ -1346,11 +1360,32 @@ export default function BakeSchedule() {
       )}
 
       {/* ── Instellingen ───────────────────────────────────────── */}
-      <div className="controls">
-        <div className="ctlbar">
+      <div className={"controls" + (showCtl ? "" : " folded")}>
+        <div className="ctlbar" role="button" tabIndex={0}
+          onClick={() => setShowCtl((v) => !v)}
+          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowCtl((v) => !v); } }}>
+          <span className="ctlchev">{showCtl ? "▾" : "▸"}</span>
           <span className="ctlbarlabel">Instellingen</span>
-          <button className="resetbtn" onClick={resetAll}>↺ Reset velden</button>
+          {showCtl && <button className="resetbtn" onClick={(e) => { e.stopPropagation(); resetAll(); }}>↺ Reset velden</button>}
         </div>
+
+        {!showCtl && (
+          <div className="ctlsummary" onClick={() => setShowCtl(true)}>
+            {active.length === 0 ? <span className="sumline">Nog niets gekozen — tik om te openen</span> : (
+              <>
+                <span className="sumchips">
+                  {active.map((t) => (
+                    <span key={t.id} className="sumchip" style={{ background: t.tint, color: t.ink }}>{counts[t.id]}× {t.label}</span>
+                  ))}
+                </span>
+                <span className="sumline">
+                  {temp} °C · {bulkLabel} koud · {startMode === "tegelijk" ? "alles tegelijk" : startMode === "bakdag" ? "één bakdag" : "één startdag"}
+                  {coldMode === "narijs" ? " · koud na vormen" : ""}
+                </span>
+              </>
+            )}
+          </div>
+        )}
 
         {active.length === 0 && <p className="hint">Nog niets gekozen — voeg hieronder een deegsoort toe.</p>}
         {active.map((t) => (
@@ -1648,7 +1683,15 @@ h1 { font-family:'Fraunces',serif; font-weight:600; font-size:30px; margin:0 0 4
 .select.small { font-size:12px; font-weight:400; font-family:'Inter',sans-serif; height:30px; width:auto; flex:1; min-width:120px; }
 
 .controls { display:flex; flex-wrap:wrap; gap:10px 12px; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:12px; }
-.ctlbar { flex-basis:100%; display:flex; align-items:center; justify-content:space-between; }
+.ctlbar { flex-basis:100%; display:flex; align-items:center; gap:8px; cursor:pointer; user-select:none; }
+.ctlbar .resetbtn { margin-left:auto; }
+.ctlchev { font-size:11px; color:var(--muted); width:10px; }
+.controls.folded { gap:8px; }
+.controls.folded > *:not(.ctlbar):not(.ctlsummary) { display:none; }
+.ctlsummary { flex-basis:100%; display:flex; flex-direction:column; gap:6px; cursor:pointer; }
+.sumchips { display:flex; flex-wrap:wrap; gap:6px; }
+.sumchip { font-size:12px; font-weight:700; padding:3px 9px; border-radius:20px; }
+.sumline { font-family:'Space Mono',monospace; font-size:11px; color:var(--muted); line-height:1.5; }
 .ctlbarlabel { font-family:'Space Mono',monospace; font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
 .resetbtn { font:inherit; font-size:12.5px; font-weight:600; color:var(--muted); background:var(--paper); border:1px solid var(--line); border-radius:20px; padding:5px 12px; cursor:pointer; }
 .selrow { flex-basis:100%; display:flex; align-items:center; gap:9px; padding:6px 0; border-bottom:1px solid var(--line); }
