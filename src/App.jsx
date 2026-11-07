@@ -19,7 +19,7 @@ const store = {
   get(key) { try { const raw = localStorage.getItem(key); return raw ? { value: raw } : null; } catch (e) { return null; } },
   set(key, value) { try { localStorage.setItem(key, value); } catch (e) {} },
 };
-const LIB_VERSION = 4;
+const LIB_VERSION = 8;
 
 const ACT_META = { take: "Uit de koeling / bijkomen", mix: "Mengen / kneden", fold: "Vouwen (folds)", fridge: "Koelkast (koude bulk)", rest: "Rijzen / wachten", shape: "Vormen", device: "Apparaat aan", bake: "Bakken" };
 const ACT_COLOR = { take: "#C58A5A", mix: "#B0863A", fold: "#7E6BB0", fridge: "#3E9BC0", rest: "#9A8F7E", shape: "#6E8F3A", device: "#5B6E8A", bake: "#D64530" };
@@ -60,7 +60,7 @@ const LEAN_START = [
 const DEFAULT_LIBRARY = [
   {
     id: "focaccia", label: "Focaccia", ink: "#5F7A2C", tint: "#E7ECD4", node: "#5F7A2C",
-    unit: "plaat", useHyd: true, flour: 500, hyd: 74, bass: 0.24, levain: 100, levainMulti: 65, max: 4,
+    coldIdeal: 14, retard: false, bakeTemp: 230, unit: "plaat", useHyd: true, flour: 500, hyd: 74, bass: 0.24, levain: 100, levainMulti: 65, max: 4,
     waterPhase: "s1", bassPhase: "s2", levainPhase: "s2",
     ing: [
       { name: "tipo 00", g: 300, group: "Bloem/meel", phase: "s1" },
@@ -88,7 +88,7 @@ const DEFAULT_LIBRARY = [
   },
   {
     id: "boule", label: "Boules", ink: "#B15511", tint: "#F5E6D2", node: "#B15511",
-    unit: "boule", useHyd: true, flour: 450, hyd: 78, bass: 0.07, levain: 90, levainMulti: 60, max: 8,
+    coldIdeal: 16, retard: true, bakeTemp: 250, unit: "boule", useHyd: true, flour: 450, hyd: 78, bass: 0.07, levain: 90, levainMulti: 60, max: 8,
     waterPhase: "s1", bassPhase: "s2", levainPhase: "s2",
     ing: [
       { name: "T65", g: 300, group: "Bloem/meel", phase: "s1" },
@@ -115,7 +115,7 @@ const DEFAULT_LIBRARY = [
   },
   {
     id: "volkoren", label: "Volkoren", ink: "#6B4A2B", tint: "#E7DBC9", node: "#6B4A2B",
-    unit: "boule", useHyd: true, flour: 450, hyd: 82, bass: 0.10, levain: 90, levainMulti: 60, max: 4,
+    coldIdeal: 16, retard: true, bakeTemp: 250, unit: "boule", useHyd: true, flour: 450, hyd: 82, bass: 0.10, levain: 90, levainMulti: 60, max: 4,
     waterPhase: "s1", bassPhase: "s2", levainPhase: "s2",
     ing: [
       { name: "volkoren", g: 300, group: "Bloem/meel", phase: "s1" },
@@ -141,7 +141,7 @@ const DEFAULT_LIBRARY = [
   },
   {
     id: "pita", label: "Pita's", ink: "#C0872E", tint: "#F2E6C8", node: "#C0872E",
-    unit: "stuk", useHyd: true, flour: 60, hyd: 65, bass: 0.05, levain: 11, levainMulti: 8, max: 12,
+    coldIdeal: 14, retard: false, bakeTemp: 290, unit: "stuk", useHyd: true, flour: 60, hyd: 65, bass: 0.05, levain: 11, levainMulti: 8, max: 12,
     waterPhase: "s1", bassPhase: "s2", levainPhase: "s2",
     ing: [
       { name: "T65", g: 50, group: "Bloem/meel", phase: "s1" },
@@ -170,7 +170,7 @@ const DEFAULT_LIBRARY = [
   },
   {
     id: "worst", label: "Worstenbroodjes", ink: "#9E3B2E", tint: "#F1D9D3", node: "#9E3B2E",
-    unit: "stuk", useHyd: false, flour: 50, hyd: 0, bass: 0, levain: 10, levainMulti: 7, max: 12,
+    coldIdeal: 14, retard: false, bakeTemp: 200, unit: "stuk", useHyd: false, flour: 50, hyd: 0, bass: 0, levain: 10, levainMulti: 7, max: 12,
     waterPhase: null, bassPhase: null, levainPhase: "w1",
     ing: [
       { name: "bloem", g: 50, group: "Bloem/meel", phase: "w1" },
@@ -208,7 +208,7 @@ const DEFAULT_LIBRARY = [
   },
   {
     id: "babka", label: "Babka", ink: "#7A4458", tint: "#EFDCE2", node: "#7A4458",
-    unit: "blik", useHyd: false, flour: 310, hyd: 0, bass: 0, levain: 138, levainMulti: 95, max: 3,
+    coldIdeal: 14, retard: false, bakeTemp: 175, unit: "blik", useHyd: false, flour: 310, hyd: 0, bass: 0, levain: 138, levainMulti: 95, max: 3,
     waterPhase: null, bassPhase: null, levainPhase: "k1",
     ing: [
       { name: "patentbloem (11–12% eiwit)", g: 310, group: "Bloem/meel", phase: "k1" },
@@ -218,7 +218,7 @@ const DEFAULT_LIBRARY = [
       { name: "zout", g: 8, group: "Zout", phase: "k1" },
       { name: "roomboter (kamertemp)", g: 100, group: "Vet", phase: "k1" },
       { name: "donkerbruine basterdsuiker", g: 200, group: "Vulling", phase: "k4" },
-      { name: "roomboter, gesmolten", g: 42, group: "Vulling", phase: "k4" },
+      { name: "roomboter, gesmolten", g: 70, group: "Vulling", phase: "k4" },
       { name: "bloem", g: 15, group: "Vulling", phase: "k4" },
       { name: "kaneel", g: 8, group: "Vulling", phase: "k4" },
       { name: "zout", g: 1, group: "Vulling", phase: "k4" },
@@ -240,8 +240,8 @@ const DEFAULT_LIBRARY = [
     ],
     bakeSteps: [
       { id: "k4", title: "Vulling maken + deeg uit koeling", act: "take", gap: 15, scale: false,
-        note: "Alle vullingsingrediënten door elkaar roeren tot een spreidbare pasta.",
-        detail: "Maak de vulling vóórdat het deeg uit de koeling komt. Alles in een kom en doorroeren tot een gelijkmatige, smeerbare massa.\n\nChocoladevariant (in plaats van kaneel): 110 g suiker, 75 g boter, 70 g pure chocolade, 25 g cacao. Smelt de boter, haal van het vuur, roer suiker en chocolade erdoor tot glad, dan de cacao. Laten afkoelen tot het de dikte van zachte pindakaas heeft." },
+        note: "In een pannetje zachtjes verwarmen tot het vloeibaar en smeerbaar is.",
+        detail: "Maak de vulling vóórdat het deeg uit de koeling komt. Alles in een pannetje en op laag vuur verwarmen tot de suiker nat glanst en het geheel soepel en smeerbaar wordt — koud geroerd blijft het een korrelige, kruimelige massa die je niet uitgesmeerd krijgt.\n\nLaat 'm iets afkoelen tot de dikte van zachte pindakaas: te warm smelt hij in het koude deeg en loopt uit de rol.\n\nChocoladevariant (in plaats van kaneel): 110 g suiker, 75 g boter, 70 g pure chocolade, 25 g cacao. Smelt de boter, haal van het vuur, roer suiker en chocolade erdoor tot glad, dan de cacao." },
       { id: "k5", title: "Uitrollen + vullen + oprollen", act: "shape", gap: 15, scale: false,
         note: "Rechthoek ~25 × 30 cm. Strak oprollen vanaf de korte zijde.",
         detail: "Stort het koude deeg op een bebloemd blad en rol uit tot een rechthoek van ongeveer 25 × 30 cm, korte zijde naar je toe. Wil je meer laagjes en minder dikke vullingsaders: rol langer uit, tot ~25 × 60 cm.\n\nSmeer de vulling uit en houd ~2,5 cm vrij aan de verste korte zijde. Rol vanaf je toe naar strak op en trek bij elke slag het deeg aan — losjes oprollen geeft holtes in de vlecht." },
@@ -256,11 +256,302 @@ const DEFAULT_LIBRARY = [
         detail: "Oven voorverwarmen op 175 °C, rooster in het midden, géén hetelucht — bij hetelucht kleurt de suiker te snel voor de kern gaar is. Zet het blik op een met bakpapier beklede bakplaat; er lekt gegarandeerd suiker uit.\n\nBestrijk met losgeklopt ei + melk en bak 40–50 min tot de kern 93 °C is. Kleurt hij te snel in de laatste 10 min, dek dan losjes af met folie of zak 10 °C.\n\nMaak ondertussen de siroop: suiker en water zachtjes verwarmen tot de suiker volledig is opgelost. Na het bakken de korte zijden losmaken met een spatel, dun insmeren met siroop, precies 10 min in het blik laten staan en er dán uittillen — langer wachten maakt hem vastplakken." },
     ],
   },
+  {
+    id: "grieksepita", label: "Griekse pita", ink: "#2E6F8E", tint: "#D9E7EF", node: "#2E6F8E",
+    coldIdeal: 14, retard: false, bakeTemp: 0, oven: false, unit: "stuk", useHyd: true, flour: 60, hyd: 52, bass: 0.05, levain: 12, levainMulti: 9, max: 12,
+    waterPhase: "s1", bassPhase: "s2", levainPhase: "s2",
+    ing: [
+      { name: "T65 / patentbloem", g: 55, group: "Bloem/meel", phase: "s1" },
+      { name: "manitoba", g: 5, group: "Bloem/meel", phase: "s1" },
+      { name: "Griekse yoghurt (vol)", g: 12, group: "Zuivel/ei", phase: "s2" },
+      { name: "zout", g: 1.2, group: "Zout", phase: "s2" },
+      { name: "olijfolie", g: 4, group: "Vet", phase: "s2" },
+      { name: "olijfolie (bakken/insmeren)", g: 3, group: "Afwerking", phase: "gp4" },
+    ],
+    startSteps: LEAN_START,
+    bakeSteps: [
+      { id: "gp1", title: "Uit koeling", act: "take", gap: 45, scale: false,
+        note: "~45 min op kamertemp. Koud deeg krimpt terug bij het uitrollen.",
+        detail: "Anders dan de pocket-pita wil deze geen gloeiende steen: hij bakt in een pan. Laat het deeg dus rustig op temperatuur komen en zet alvast een zware koekenpan of gietijzeren plaat klaar." },
+      { id: "gp2", title: "Verdelen + opbollen", act: "shape", gap: 45, scale: true,
+        note: "~110 g per stuk, strak opbollen. Daarna bolrust onder een doek.",
+        detail: "Weeg gelijke stukken en bol strak op. De bolrust ontspant het gluten; sla 'm niet over, anders krimpt de lap bij elke haal van de deegroller terug." },
+      { id: "gp3", title: "Uitrollen tot ~5 mm", act: "shape", gap: 15, scale: false,
+        note: "Dikker dan pocket-pita — dat is precies de bedoeling.",
+        detail: "Rol uit tot ovalen of ronde lappen van ongeveer 5 mm, iets dikker dan een pocket-pita. Je wílt hier géén holle pocket: dik genoeg houden en niet te heet bakken zorgt dat hij zacht en vouwbaar blijft in plaats van op te blazen." },
+      { id: "gp4", title: "Bakken in de pan", act: "bake", bake: true, dur: 15,
+        note: "Droge pan op middelhoog · 1–2 min per kant · daarna insmeren met olijfolie.",
+        detail: "Bak in een droge, goed hete maar niet gloeiende pan (middelhoog): ~1,5 min tot er blaasjes en bruine vlekken komen, dan omdraaien en nog ~1 min. Te heet = pocket en een droge pita; te koel = taai.\n\nSmeer ze direct uit de pan in met olijfolie en stapel ze onder een theedoek — dat stoomt ze zacht en soepel. Zo blijven ze goed rollen om gyros of souvlaki." },
+    ],
+  },
+  {
+    id: "pinsa", label: "Pinsa", ink: "#A8681C", tint: "#F3E4CC", node: "#A8681C",
+    coldIdeal: 48, retard: true, bakeTemp: 300, unit: "pinsa", useHyd: true, flour: 140, hyd: 80, bass: 0.20, levain: 28, levainMulti: 18, max: 6,
+    waterPhase: "s1", bassPhase: "s2", levainPhase: "s2",
+    ing: [
+      { name: "tipo 0 / manitoba", g: 110, group: "Bloem/meel", phase: "s1" },
+      { name: "rijstebloem", g: 15, group: "Bloem/meel", phase: "s1" },
+      { name: "sojabloem", g: 15, group: "Bloem/meel", phase: "s1" },
+      { name: "zout", g: 3, group: "Zout", phase: "s2" },
+      { name: "olijfolie", g: 5, group: "Vet", phase: "s3" },
+      { name: "rijstebloem / semola (uitrekken)", g: 10, group: "Afwerking", phase: "pn3" },
+    ],
+    startSteps: LEAN_START,
+    bakeSteps: [
+      { id: "pn1", title: "Uit koeling", act: "take", gap: 120, scale: true,
+        note: "2 uur op kamertemp. Pinsa-deeg moet écht ontspannen zijn.",
+        detail: "Pinsa heeft een lange, koude rijs nodig — 24 uur is het minimum, 48–72 uur geeft duidelijk meer smaak en een beter verteerbaar deeg. Zet je bakdag dus gerust twee of drie dagen na de startdag.\n\nLaat het deeg daarna volledig op kamertemperatuur komen; koud uitrekken scheurt." },
+      { id: "pn2", title: "Verdelen + bollen (panetti)", act: "shape", gap: 120, scale: true,
+        note: "~280 g per stuk, losjes bollen. Daarna afgedekt laten ontspannen.",
+        detail: "Verdeel in stukken van ongeveer 280 g en bol losjes op — niet strak, je wilt de luchtbellen bewaren. Leg ze afgedekt in geoliede bakjes (appretto) tot ze week en bubbelig aanvoelen." },
+      { id: "pn3", preBake: true, title: "Uitrekken op rijstebloem", act: "shape", gap: 15, scale: false,
+        note: "Ovaal ~30 cm, met de vingertoppen. Niet rollen.",
+        detail: "Bestuif royaal met rijstebloem of semola en druk het deeg met je vingertoppen uit tot een langwerpig ovaal van ~30 cm — de klassieke pinsa-vorm. Gebruik géén deegroller: die jaagt de lucht eruit en je verliest de luchtige, alveolaire kruim die pinsa z'n naam geeft.\n\nVeeg overtollige bloem eraf voordat hij de oven in gaat." },
+      { id: "pn4", title: "Voorbakken + beleggen + afbakken", act: "bake", bake: true, dur: 15,
+        note: "Steen op max (280–300 °C). Blanco 4–5 min, beleggen, nog 3–5 min.",
+        detail: "Pinsa bakt in twee fases: eerst de kale bodem 4–5 min op een gloeiend hete steen of staal tot hij stevig is en licht kleurt. Haal 'm eruit, beleg met saus, kaas en topping, en bak nog 3–5 min af tot de randen diep gekleurd zijn.\n\nDie voorbak is wat pinsa krokant-van-buiten en luchtig-van-binnen maakt: bij 80% hydratatie wordt een in één keer belegde bodem week. Oven zo heet mogelijk — 280–300 °C, steen minstens 45 min voorverwarmen." },
+    ],
+  },
+  {
+    id: "ciabatta", label: "Ciabatta", ink: "#7A8B5C", tint: "#E6EBDC", node: "#7A8B5C",
+    coldIdeal: 14, retard: true, bakeTemp: 250, unit: "stuk", useHyd: true, flour: 200, hyd: 85, bass: 0.15, levain: 40, levainMulti: 26, max: 6,
+    waterPhase: "s1", bassPhase: "s2", levainPhase: "s2",
+    ing: [
+      { name: "tarwebloem / tipo 0", g: 160, group: "Bloem/meel", phase: "s1" },
+      { name: "manitoba", g: 40, group: "Bloem/meel", phase: "s1" },
+      { name: "zout", g: 4, group: "Zout", phase: "s2" },
+      { name: "semola / bloem (werkblad)", g: 20, group: "Afwerking", phase: "cb2" },
+    ],
+    startSteps: LEAN_START,
+    bakeSteps: [
+      { id: "cb1", title: "Uit koeling", act: "take", gap: 60, scale: false,
+        note: "~1 uur bijkomen. Niet ontgassen — de bellen zijn het hele punt.",
+        detail: "Ciabatta is bewust nat (85%) en de kruim moet grof en onregelmatig worden. Behandel het deeg vanaf nu zo zacht mogelijk: elke keer dat je het plat drukt, verlies je precies waar je op gewacht hebt." },
+      { id: "cb2", title: "Storten + verdelen", act: "shape", gap: 45, scale: true,
+        note: "Royaal bebloemd blad. Rechthoek trekken, in repen snijden. Niet vormen.",
+        detail: "Kantel het deeg voorzichtig uit de bak op een royaal met semola bestoven blad — laat de zwaartekracht het werk doen. Trek het losjes tot een rechthoek en snijd met een deegsteker in repen (de klassieke 'pantoffel'-vorm).\n\nEr wordt hier niet gevormd en niet opgebold. Hooguit de uiteinden iets instoppen. Laat de repen onafgedekt op het bebloemde blad rusten." },
+      { id: "cb3", preBake: true, title: "Omdraaien op bakpapier", act: "shape", gap: 15, scale: false,
+        note: "Met twee handen optillen, omdraaien, licht uitrekken.",
+        detail: "Til elke reep met beide handen op onder de uiteinden, draai 'm om (de onderkant wordt de bovenkant) en leg 'm op bakpapier. Trek 'm daarbij iets uit in de lengte. Deze draai is wat ciabatta z'n karakteristieke grillige bovenkant geeft." },
+      { id: "cb4", title: "Ciabatta bakken", act: "bake", bake: true, dur: 30,
+        note: "250 °C met stoom 15 min → 230 °C droog 10–15 min. Niet scoren.",
+        detail: "Steen of staal voorverwarmen op 250 °C. Schuif de ciabatta erop met flink stoom (Miele: 100 % stoom) de eerste 15 min, dan droog verder op 230 °C tot diep goudbruin, 10–15 min.\n\nNiet scoren — ciabatta scheurt vanzelf open waar hij wil. Kern ~97 °C. Volledig laten afkoelen voor je snijdt, anders klapt de natte kruim dicht." },
+    ],
+  },
+  {
+    id: "baguette", label: "Baguette", ink: "#4F6D8F", tint: "#DCE5EE", node: "#4F6D8F",
+    coldIdeal: 14, retard: true, bakeTemp: 250, unit: "stuk", useHyd: true, flour: 180, hyd: 72, bass: 0.08, levain: 36, levainMulti: 24, max: 6,
+    waterPhase: "s1", bassPhase: "s2", levainPhase: "s2",
+    ing: [
+      { name: "T65", g: 180, group: "Bloem/meel", phase: "s1" },
+      { name: "zout", g: 3.5, group: "Zout", phase: "s2" },
+      { name: "bloem (couche)", g: 15, group: "Afwerking", phase: "bg3" },
+    ],
+    startSteps: LEAN_START,
+    bakeSteps: [
+      { id: "bg1", title: "Uit koeling", act: "take", gap: 45, scale: false,
+        note: "~45 min bijkomen. Koud deeg laat zich strakker vormen.",
+        detail: "Leg alvast je couche (linnen doek) klaar met flink bloem erin, plus een plank of omgekeerde bakplaat om straks over te zetten. Baguette draait volledig om spanning opbouwen: koel deeg helpt daarbij." },
+      { id: "bg2", title: "Verdelen + voorvormen", act: "shape", gap: 30, scale: false,
+        note: "~350 g per stuk. Losse cilinder, naad onder. Bankrust 20–30 min.",
+        detail: "Verdeel in gelijke stukken en vouw elk losjes tot een korte cilinder — nog niet strak. Deze voorvorm bepaalt of de eindvorm gelijkmatig wordt; een scheve cilinder geeft een scheve baguette.\n\nBankrust onafgedekt, naad onder." },
+      { id: "bg3", title: "Eindvorm → couche", act: "shape", gap: 75, scale: true,
+        note: "Oprollen in 3 stappen, dan uitrollen tot ~40–45 cm. Naad onder in de couche.",
+        detail: "Druk de cilinder uit tot een rechthoek, vouw de bovenste derde naar het midden en druk aan; vouw dan dubbel over de volle lengte en sluit de naad met de muis van je hand. Rol vervolgens met beide handen uit vanuit het midden naar buiten tot ~40–45 cm — of zo lang als je oven aankan.\n\nLeg ze met de naad ónder in de couche, met een plooi stof ertussen zodat ze elkaar niet raken. Narijs tot ze week aanvoelen maar nog veerkracht hebben; te ver = geen oor bij het scoren." },
+      { id: "bg4", title: "Scoren + bakken", act: "bake", bake: true, dur: 30,
+        note: "250 °C met stoom 13 min → 230 °C droog 12–15 min.",
+        detail: "Rol de baguettes van de couche op een plank en schuif ze op bakpapier. Scoren: mesje bijna plat (20–30°), 3–5 overlappende sneden in de lengte-as, niet dwars — dat is het verschil tussen een oor en een barst.\n\nSteen op 250 °C, flink stoom (Miele: 100 %) de eerste 13 min, daarna droog op 230 °C 12–15 min tot diep gekleurd. Laatste 5 min de deur op een kier voor een knappende korst." },
+    ],
+  },
+  {
+    id: "shokupan", label: "Shokupan", ink: "#C2897A", tint: "#F5E3DE", node: "#C2897A",
+    coldIdeal: 14, retard: false, bakeTemp: 190, unit: "blik", useHyd: false, flour: 300, hyd: 0, bass: 0, levain: 90, levainMulti: 60, max: 3,
+    waterPhase: null, bassPhase: null, levainPhase: "sk2",
+    ing: [
+      { name: "bloem (tangzhong)", g: 20, group: "Bloem/meel", phase: "sk1" },
+      { name: "volle melk (tangzhong)", g: 100, group: "Zuivel/ei", phase: "sk1" },
+      { name: "patentbloem / manitoba", g: 280, group: "Bloem/meel", phase: "sk2" },
+      { name: "volle melk", g: 90, group: "Zuivel/ei", phase: "sk2" },
+      { name: "suiker", g: 30, group: "Zoet", phase: "sk2" },
+      { name: "zout", g: 6, group: "Zout", phase: "sk2" },
+      { name: "roomboter (kamertemp)", g: 30, group: "Vet", phase: "sk2" },
+      { name: "melk (bestrijken)", g: 10, group: "Afwerking", phase: "sk7" },
+    ],
+    startSteps: [
+      { id: "sk1", title: "Tangzhong koken + afkoelen", act: "mix", gap: 30, scale: false,
+        note: "Bloem + melk op laag vuur tot puddingdikte (~65 °C). Volledig laten afkoelen.",
+        detail: "Roer de bloem door de koude melk tot er geen klontjes zijn, dan op laag vuur onder voortdurend roeren tot het indikt als pudding en de garde sporen trekt — rond 65 °C. Dat duurt 2–3 min.\n\nDe tangzhong verstijfselt het zetmeel, waardoor het deeg veel meer vocht vasthoudt. Dát maakt shokupan wattig zacht en houdt 'm dagen vers. Afdekken met folie op het oppervlak en volledig laten afkoelen — warm toevoegen doodt je levain." },
+      { id: "sk2", title: "Deeg mixen + boter inwerken", act: "mix", gap: 30, scale: false,
+        note: "Kneden tot volledig glutenvenster. Boter pas ná de eerste ontwikkeling.",
+        detail: "Alles behalve de boter in de kom, inclusief de afgekoelde tangzhong. Kneed tot een samenhangend deeg, voeg dan de zachte boter in stukjes toe en kneed door.\n\nShokupan is het enige brood op deze lijst waar je écht een volledig glutenvenster wilt: dun uitgerekt deeg waar je doorheen kunt kijken zonder dat het scheurt. Minder dan dat geeft een grove in plaats van wattige kruim. Reken op 15–25 min in de machine." },
+      { id: "sk3", title: "Bulk", act: "fold", gap: 150, scale: true,
+        note: "Eén set vouwen na 45 min. Tot ~50 % gerezen.",
+        detail: "Verrijkt melkdeeg rijst traag. Eén lichte set vouwen in het eerste uur is genoeg; daarna met rust laten tot het duidelijk gegroeid en bol is." },
+      { id: "sk4", title: "In de koelkast — koude bulk", act: "fridge", gap: 0, scale: false,
+        note: "Afgedekt. Koud deeg rolt veel netter op tot de rollen.",
+        detail: "Naast smaak maakt de koeling het deeg stevig genoeg om strak op te rollen. Warm shokupan-deeg plakt en rekt uit, koud rolt het als een droom." },
+    ],
+    bakeSteps: [
+      { id: "sk5", title: "Uit koeling", act: "take", gap: 45, scale: false,
+        note: "~45 min bijkomen. Blik invetten.",
+        detail: "Blik ~21 × 10 cm (standaard busbrood) of een Pullman van 23 × 10 × 10 cm. Invetten of met bakpapier bekleden. Wil je de strakke rechthoek, bak dan mét deksel." },
+      { id: "sk6", title: "Verdelen + oprollen → blik", act: "shape", gap: 240, scale: true,
+        note: "3 stukken, elk uitrollen en oprollen. Rollen náást elkaar in het blik.",
+        detail: "Verdeel in 3 gelijke stukken. Rol elk uit tot een ovaal, vouw de lange zijden naar het midden tot een reep, en rol die strak op als een rolletje. Leg de drie rolletjes met de naad onder náást elkaar in het blik — die structuur geeft de karakteristieke pluk-kruim.\n\nNarijzen tot het deeg ongeveer 1 cm onder de rand staat (zonder deksel) of het blik voor ~80 % vult (met deksel). Reken op 3,5–4,5 uur; verrijkt zuurdesem is traag. Te ver = ingezakte top." },
+      { id: "sk7", title: "Shokupan bakken", act: "bake", bake: true, dur: 40,
+        note: "190 °C · 32–38 min · kern 91 °C. Met deksel: 200 °C.",
+        detail: "Bestrijk met melk (zonder deksel) en bak op 190 °C boven-/onderwarmte 32–38 min tot diep goudbruin, kern ~91 °C. Met deksel: 200 °C, geen bestrijking.\n\nMeteen uit het blik op een rooster — in het blik laten staan maakt de zijkanten vochtig en laat 'm inzakken. Pas snijden als hij volledig koud is." },
+    ],
+  },
+  {
+    id: "burgerbol", label: "Hamburgerbollen", ink: "#A3764A", tint: "#EFE2D2", node: "#A3764A",
+    coldIdeal: 14, retard: false, bakeTemp: 190, unit: "stuk", useHyd: false, flour: 50, hyd: 0, bass: 0, levain: 15, levainMulti: 10, max: 12,
+    waterPhase: null, bassPhase: null, levainPhase: "hb1",
+    ing: [
+      { name: "patentbloem", g: 50, group: "Bloem/meel", phase: "hb1" },
+      { name: "volle melk", g: 22, group: "Zuivel/ei", phase: "hb1" },
+      { name: "ei", g: 5, group: "Zuivel/ei", phase: "hb1" },
+      { name: "suiker", g: 3.5, group: "Zoet", phase: "hb1" },
+      { name: "zout", g: 1, group: "Zout", phase: "hb1" },
+      { name: "roomboter (kamertemp)", g: 5, group: "Vet", phase: "hb1" },
+      { name: "ei (eiwash)", g: 5, group: "Afwerking", phase: "hb6" },
+      { name: "sesamzaad", g: 1.5, group: "Afwerking", phase: "hb6" },
+    ],
+    startSteps: [
+      { id: "hb1", title: "Deeg mixen + boter inwerken", act: "mix", gap: 30, scale: false,
+        note: "Zelfde deegfamilie als shokupan, zonder tangzhong. Kneden tot glutenvenster.",
+        detail: "Alles behalve de boter mengen en kneden tot een soepel deeg, dan de zachte boter in stukjes erdoor en doorkneden tot een glutenvenster.\n\nWil je nóg zachtere bollen die langer vers blijven: maak eerst een tangzhong van 10 g bloem + 50 g melk per 6 bollen (koken tot puddingdikte, afkoelen) en trek die hoeveelheden van de bloem en melk in het recept af." },
+      { id: "hb2", title: "Bulk", act: "fold", gap: 135, scale: true,
+        note: "1–2 lichte vouwen in het eerste uur. Tot ~50 % gerezen.",
+        detail: "Geef in het eerste uur een of twee lichte vouwen voor extra kracht, daarna met rust laten tot het deeg duidelijk luchtiger en boller is." },
+      { id: "hb3", title: "In de koelkast — koude bulk", act: "fridge", gap: 0, scale: false,
+        note: "Afgesloten tub. Koud bollen ze veel strakker op.",
+        detail: "De koeling bouwt smaak op én maakt de boter stevig, zodat je de bollen strak kunt opbollen zonder dat het deeg uitrekt." },
+    ],
+    bakeSteps: [
+      { id: "hb4", title: "Uit koeling", act: "take", gap: 45, scale: false,
+        note: "~45 min bijkomen.",
+        detail: "Laat het deeg niet te warm worden: koud opbollen geeft een strakkere bol die mooier rond blijft in plaats van uit te zakken." },
+      { id: "hb5", title: "Verdelen + opbollen", act: "shape", gap: 150, scale: true,
+        note: "~100 g per stuk, strak opbollen. Ruim uit elkaar op de plaat.",
+        detail: "Weeg gelijke stukken (~100 g) en bol strak op met de hand of de deegsteker — spanning op de huid houdt ze rond tijdens de rijs.\n\nLeg ze met 6–8 cm ruimte op een met bakpapier beklede plaat. Wil je de klassieke platte burgerbol: druk ze na de helft van de narijs licht plat met je handpalm.\n\nNarijzen tot ze duidelijk gezwollen zijn en bij een lichte druk traag terugveren — 2,5–3,5 uur." },
+      { id: "hb6", title: "Eiwash + sesam", act: "shape", gap: 10, scale: false,
+        note: "Losgeklopt ei met een snuf zout, dun opbrengen. Dan sesam.",
+        detail: "Klop het ei los met een snufje zout (dat maakt het vloeibaarder en geeft een gelijkmatiger glans). Dun opbrengen met een kwast — plassen ei in de naden bakken donker aan. Strooi direct daarna het sesamzaad erop zodat het blijft plakken." },
+      { id: "hb7", title: "Bollen bakken", act: "bake", bake: true, dur: 20,
+        note: "190 °C · 15–18 min · kern 91 °C. Geen stoom.",
+        detail: "Bak op 190 °C boven-/onderwarmte, 15–18 min tot goudbruin, kern ~91 °C. Geen stoom en niet heter: ei en suiker kleuren snel, en je wilt een zachte korst, geen knapperige.\n\nAfkoelen op een rooster. Ze vriezen uitstekend in — halveer ze vóór het invriezen, dan kun je ze zo uit de vriezer roosteren." },
+    ],
+  },
+  {
+    id: "naan", label: "Naan", ink: "#8E6BA8", tint: "#E8DFF0", node: "#8E6BA8",
+    coldIdeal: 14, retard: false, bakeTemp: 0, oven: false, unit: "stuk", useHyd: false, flour: 70, hyd: 0, bass: 0, levain: 14, levainMulti: 9, max: 12,
+    waterPhase: null, bassPhase: null, levainPhase: "na1",
+    ing: [
+      { name: "patentbloem", g: 70, group: "Bloem/meel", phase: "na1" },
+      { name: "volle yoghurt", g: 25, group: "Zuivel/ei", phase: "na1" },
+      { name: "volle melk", g: 15, group: "Zuivel/ei", phase: "na1" },
+      { name: "suiker", g: 2, group: "Zoet", phase: "na1" },
+      { name: "zout", g: 1.5, group: "Zout", phase: "na1" },
+      { name: "ghee / gesmolten boter", g: 5, group: "Vet", phase: "na1" },
+      { name: "boter (knoflookboter)", g: 8, group: "Afwerking", phase: "na7" },
+      { name: "knoflook + koriander", g: 3, group: "Afwerking", phase: "na7" },
+    ],
+    startSteps: [
+      { id: "na1", title: "Deeg mixen", act: "mix", gap: 30, scale: false,
+        note: "Zacht, licht plakkerig deeg. Kneden tot glad, ~8 min.",
+        detail: "Yoghurt is hier het geheim: het zuur verzacht het gluten en geeft naan die kenmerkende malse, taaie beet. Meng alles tot een zacht, licht plakkerig deeg en kneed tot glad — je hoeft géén volledig glutenvenster.\n\nTe stevig deeg geeft droge, crackerachtige naan. Hij mag aan je handen blijven hangen." },
+      { id: "na2", title: "Bulk", act: "fold", gap: 120, scale: true,
+        note: "Eén set vouwen na 45 min. Tot ~50 % gerezen.",
+        detail: "Eén lichte set vouwen is genoeg; naan hoeft geen grote kracht. Laat het daarna rusten tot het zichtbaar luchtig is." },
+      { id: "na3", title: "In de koelkast — koude bulk", act: "fridge", gap: 0, scale: false,
+        note: "Afgedekt. Koude rijs geeft duidelijk meer smaak.",
+        detail: "De koude nacht doet voor naan hetzelfde als voor je boules: diepere smaak en flexibele planning. Het deeg wordt ook steviger en daardoor makkelijker uit te rollen." },
+    ],
+    bakeSteps: [
+      { id: "na4", title: "Uit koeling", act: "take", gap: 45, scale: false,
+        note: "~45 min bijkomen. Gietijzeren pan of plaat klaarzetten.",
+        detail: "Naan wil een gloeiend hete, droge pan — gietijzer of een zware koekenpan. Zet die alvast op het vuur; hij moet écht heet zijn voordat de eerste erin gaat." },
+      { id: "na5", title: "Verdelen + bollen", act: "shape", gap: 45, scale: true,
+        note: "~130 g per stuk, bollen. Daarna bolrust onder een doek.",
+        detail: "Verdeel in gelijke stukken en bol op. De bolrust ontspant het gluten zodat je straks kunt uitrollen zonder terugkrimpen." },
+      { id: "na6", title: "Uitrollen tot druppelvorm", act: "shape", gap: 15, scale: false,
+        note: "~5 mm dik, ovaal/druppel. Eén kant mag bevochtigd worden.",
+        detail: "Rol uit tot een ovaal of druppelvorm van ~5 mm. Dikker dan een tortilla, dunner dan een pita.\n\nTandoor-truc voor thuis: maak één kant licht vochtig met water en leg die kant in de pan — hij plakt vast en de bovenkant blaast dan explosief op, net als tegen de wand van een tandoor." },
+      { id: "na7", title: "Bakken in de pan", act: "bake", bake: true, dur: 15,
+        note: "Gloeiend hete droge pan · 1–2 min per kant · knoflookboter erop.",
+        detail: "Leg de naan in de gloeiend hete droge pan. Binnen een minuut komen er grote bellen; draai 'm om zodra de onderkant zwarte blaren heeft en bak de andere kant ~1 min. Die geblakerde plekken zijn gewenst — dat is het tandoor-effect.\n\nMeteen uit de pan insmeren met gesmolten boter waarin je knoflook hebt verwarmd, en bestrooien met koriander. Stapelen onder een theedoek houdt ze zacht." },
+    ],
+  },
+  {
+    id: "pizza", label: "Pizza napoletana", ink: "#C0392B", tint: "#F6DCD8", node: "#C0392B",
+    coldIdeal: 30, retard: true, bakeTemp: 300, unit: "bol", useHyd: true, flour: 150, hyd: 63, bass: 0.05, levain: 30, levainMulti: 20, max: 8,
+    waterPhase: "s1", bassPhase: "s2", levainPhase: "s2",
+    ing: [
+      { name: "tipo 00 (pizzabloem)", g: 150, group: "Bloem/meel", phase: "s1" },
+      { name: "zout", g: 4, group: "Zout", phase: "s2" },
+      { name: "olijfolie (optioneel)", g: 3, group: "Vet", phase: "s3" },
+      { name: "semola (uitrekken)", g: 10, group: "Afwerking", phase: "pz3" },
+    ],
+    startSteps: LEAN_START,
+    bakeSteps: [
+      { id: "pz1", title: "Uit koeling", act: "take", gap: 90, scale: true,
+        note: "1,5–2 uur op kamertemp. Koud deeg scheurt bij het uitrekken.",
+        detail: "Napoletana wil 24–48 uur koude rijs; plan de bakdag dus een of twee dagen na de startdag. Laat het deeg daarna volledig op temperatuur komen — koud uitrekken scheurt de bodem." },
+      { id: "pz2", title: "Verdelen + bollen (panetti)", act: "shape", gap: 150, scale: true,
+        note: "~280 g per bol, strak bollen. Afgedekt laten ontspannen.",
+        detail: "Weeg bollen van ongeveer 280 g en bol ze strak op — strakker dan bij pinsa, want napoletana leeft van een gespannen huid die de cornicione omhoog duwt.\n\nLeg ze met ruimte in een afgedekte bak (of losse bakjes) en laat ze ontspannen tot ze week zijn en licht uitgevloeid. Dit is de 'appretto'." },
+      { id: "pz3", preBake: true, title: "Uitrekken op semola", act: "shape", gap: 15, scale: false,
+        note: "Vanuit het midden naar buiten duwen. Rand van 1,5–2 cm vrijlaten.",
+        detail: "Leg de bol in de semola en druk met je vingertoppen vanuit het midden naar buiten, waarbij je de buitenste 1,5–2 cm volledig met rust laat: dáár zit de lucht die straks de cornicione wordt.\n\nGeen deegroller — die perst alle gas eruit en je houdt een cracker over. Til de schijf op de rug van je handen en draai 'm rond om uit te rekken tot ~30 cm.\n\nBeleg snel en spaarzaam: een natte, zwaar belegde pizza plakt aan de schep en wordt week in het midden." },
+      { id: "pz4", title: "Pizza bakken", act: "bake", bake: true, dur: 15,
+        note: "Steen op max (280–300 °C) + grill · 4–6 min. Pizzaoven: 450 °C, 90 sec.",
+        detail: "Echte napoletana bakt in 60–90 sec op 450–480 °C. Dat haalt een huishoudoven niet, dus de thuistruc: steen of staal minstens 45 min op de hoogste stand (280–300 °C) voorverwarmen, de steen hoog in de oven plaatsen en de laatste minuten de grill aanzetten. Reken op 4–6 min.\n\nHeb je een Ooni/Roccbox: 450 °C, 90 sec, halverwege draaien. Mozzarella fior di latte eerst even uitlekken, anders wordt het midden soepig." },
+    ],
+  },
+  {
+    id: "pretzel", label: "Pretzels", ink: "#4A5240", tint: "#E0E3DA", node: "#4A5240",
+    coldIdeal: 14, retard: true, bakeTemp: 220, unit: "stuk", useHyd: true, flour: 100, hyd: 58, bass: 0.05, levain: 20, levainMulti: 13, max: 12,
+    waterPhase: "pr1", bassPhase: "pr1", levainPhase: "pr1",
+    ing: [
+      { name: "patentbloem / T65", g: 100, group: "Bloem/meel", phase: "pr1" },
+      { name: "zout", g: 2, group: "Zout", phase: "pr1" },
+      { name: "roomboter (zacht)", g: 5, group: "Vet", phase: "pr1" },
+      { name: "water (loogbad)", g: 100, group: "Afwerking", phase: "pr6" },
+      { name: "natriumhydroxide (food grade, 4%)", g: 4, group: "Afwerking", phase: "pr6" },
+      { name: "grof zeezout", g: 2, group: "Afwerking", phase: "pr6" },
+    ],
+    startSteps: [
+      { id: "pr1", title: "Deeg kneden", act: "mix", gap: 45, scale: false,
+        note: "Stevig, bijna droog deeg (58%). Kneden tot glad, ~10 min.",
+        detail: "Pretzeldeeg is bewust stug — veel steviger dan je gewend bent. Dat moet: een slap deeg laat zich niet tot strakke strengen rollen en de knoop vervloeit tijdens de rijs.\n\nAlles tegelijk kneden, boter inbegrepen. Het deeg voelt eerst korrelig en wordt na een minuut of tien glad en elastisch. Blijft het kruimelen: hooguit 5 g water per stuk extra." },
+      { id: "pr2", title: "Bulk", act: "fold", gap: 90, scale: true,
+        note: "Eén set vouwen. Slechts ~30 % rijs — niet verder.",
+        detail: "Pretzels willen géén luchtige kruim maar een dichte, taaie. Houd de bulk kort en laat het deeg hooguit een derde groeien. Over-gefermenteerd pretzeldeeg geeft bleke, slappe knopen die hun vorm verliezen in het loogbad." },
+      { id: "pr3", title: "In de koelkast — koude bulk", act: "fridge", gap: 0, scale: false,
+        note: "Afgedekt. Koud deeg is essentieel voor het loogbad.",
+        detail: "Twee redenen: smaak, en stevigheid. Een koude, licht uitgedroogde buitenkant neemt het loog gelijkmatig op en houdt de knoopvorm vast. Laat de pretzels later zelfs bewust onafgedekt in de koeling staan zodat het oppervlak droog aanvoelt." },
+    ],
+    bakeSteps: [
+      { id: "pr4", title: "Uit koeling", act: "take", gap: 30, scale: false,
+        note: "Kort, ~30 min. Het deeg mag koel blijven.",
+        detail: "Anders dan bij de meeste broden wil je dit deeg niet warm hebben. Koel rolt het strakker en houdt het z'n vorm." },
+      { id: "pr5", title: "Rollen + knopen", act: "shape", gap: 45, scale: true,
+        note: "Streng van ~50 cm, dikke buik, dunne uiteinden. Daarna onafgedekt in de koeling.",
+        detail: "Rol elk stuk uit tot een streng van ~50 cm: dik in het midden, dun naar de uiteinden toe. Leg 'm als een U, draai de uiteinden twee keer om elkaar en klap de twist terug op de buik. Druk de puntjes stevig aan.\n\nLeg de knopen daarna 30–45 min onafgedekt in de koelkast. Dat drogende velletje is wat straks het diepbruine, glanzende loogoppervlak geeft — sla het niet over." },
+      { id: "pr6", preBake: true, title: "Loogbad + zout", act: "mix", gap: 10, scale: false,
+        note: "4% natronloog, 20–30 sec per stuk. Handschoenen en bril op.",
+        detail: "VEILIGHEID: natriumhydroxide is bijtend. Nitril handschoenen en een veiligheidsbril, altijd loog ín water strooien (nooit andersom), en gebruik een RVS of kunststof kom — géén aluminium, dat reageert heftig. Houd azijn bij de hand om spatten te neutraliseren. In de oven ontleedt het loog volledig; het eindproduct is veilig.\n\nDompel elke pretzel 20–30 sec onder, laat uitlekken en leg op bakpapier. Snijd de dikke buik in met een scherp mesje en bestrooi met grof zeezout.\n\nVeilig alternatief: bak 100 g baksoda 1 uur op 150 °C (dat zet het om in sterker natriumcarbonaat) en los dat op in 1 liter kokend water. Werkt minder diep, maar prima bruin." },
+      { id: "pr7", title: "Pretzels bakken", act: "bake", bake: true, dur: 25,
+        note: "220 °C · 15–18 min · geen stoom. Direct uit het bad de oven in.",
+        detail: "Bak meteen na het loogbad op 220 °C boven-/onderwarmte, 15–18 min tot diep mahoniebruin. Géén stoom — dat maakt het loogoppervlak dof in plaats van glanzend.\n\nPretzels zijn op hun best binnen een paar uur; daarna wordt het zoutige oppervlak vochtig. Invriezen en kort opwarmen werkt goed." },
+    ],
+  },
 ];
 
 const OVEN_STEP = { id: "oven", title: "Oven voorverwarmen", act: "device", shared: true,
-  note: "Dutch oven of steen mee opwarmen (~45–60 min).",
-  detail: "Verwarm de oven mét de gietijzeren pan of baksteen 45–60 min voor. Die massa moet écht gloeiend heet zijn — dat geeft de ovenveer. Steamoven: zet 100 % stoom klaar voor de eerste fase." };
+  note: "Mét Dutch oven of steen, 45–60 min. Daarna per baksel laten zakken.",
+  detail: "Verwarm één keer voor op de hoogste temperatuur die je die dag nodig hebt, mét de gietijzeren pan of baksteen erin — 45–60 min. Die massa moet écht gloeiend heet zijn; dat geeft de ovenveer.\n\nDe baksels staan daarna op volgorde van heet naar koud, zodat je de oven alleen maar hoeft te láten zakken. Afkoelen gaat trager dan opwarmen: zet 'm een paar minuten voor het volgende baksel alvast lager en zet de deur kort open om het laatste stuk te overbruggen.\n\nSteamoven: zet 100 % stoom klaar voor de eerste fase van de lean broden." };
 
 const cloneLib = (lib) => JSON.parse(JSON.stringify(lib));
 
@@ -302,6 +593,8 @@ export default function BakeSchedule() {
   const [bakeDayIdx, setBakeDayIdx] = useState(6);
   const [bakeStr, setBakeStr] = useState("09:00");
   const [bundle, setBundle] = useState(true);
+  const [coldMode, setColdMode] = useState("bulk");     // bulk | narijs
+  const [startMode, setStartMode] = useState("tegelijk"); // tegelijk | optimaal
   const [done, setDone] = useState({});
   const [openInfo, setOpenInfo] = useState({});
   const [collapsedDays, setCollapsedDays] = useState({});
@@ -350,6 +643,8 @@ export default function BakeSchedule() {
             if (v.startStr) setStartStr(v.startStr);
             if (v.bakeStr) setBakeStr(v.bakeStr);
             if (typeof v.bundle === "boolean") setBundle(v.bundle);
+            if (v.coldMode) setColdMode(v.coldMode);
+            if (v.startMode) setStartMode(v.startMode === "optimaal" ? "bakdag" : v.startMode);
             if (Array.isArray(v.sessions)) setSessions(v.sessions);
             if (v.foldT) setFoldT(v.foldT);
           }
@@ -363,11 +658,11 @@ export default function BakeSchedule() {
     (async () => {
       try {
         if (typeof window !== "undefined") {
-          store.set(STORAGE_KEY, JSON.stringify({ libVersion: LIB_VERSION, library, counts, done, temp, startDayIdx, bakeDayIdx, startStr, bakeStr, bundle, sessions, foldT }), false);
+          store.set(STORAGE_KEY, JSON.stringify({ libVersion: LIB_VERSION, library, counts, done, temp, startDayIdx, bakeDayIdx, startStr, bakeStr, bundle, coldMode, startMode, sessions, foldT }), false);
         }
       } catch (e) {}
     })();
-  }, [library, counts, done, temp, startDayIdx, bakeDayIdx, startStr, bakeStr, bundle, sessions, foldT, loaded]);
+  }, [library, counts, done, temp, startDayIdx, bakeDayIdx, startStr, bakeStr, bundle, coldMode, startMode, sessions, foldT, loaded]);
 
   useEffect(() => { if (foldT.phase !== "waiting") return; const id = setInterval(() => setNowTs(Date.now()), 250); return () => clearInterval(id); }, [foldT.phase]);
   useEffect(() => {
@@ -387,11 +682,33 @@ export default function BakeSchedule() {
   const visible = (t) => filter === "alles" || filter === t.id;
   const shown = active.filter(visible);
 
-  const chainTimes = (t, which) => {
+  const chainOf = (steps) => {
     const out = []; let acc = 0;
-    (t[which] || []).forEach((st) => { out.push({ st, off: acc }); acc += st.bake ? (st.dur || 30) : g(st); });
+    (steps || []).forEach((st) => { out.push({ st, off: acc }); acc += st.bake ? (st.dur || 30) : g(st); });
     return out;
   };
+
+  // Koude fase: tijdens de bulk (standaard) of ná het vormen (retarderen).
+  // Bij retarderen verhuizen de vormstappen naar dag 1 en gaat het gevormde
+  // deeg de koeling in; op de bakdag blijft alleen de oven over.
+  const splitOf = {};
+  active.forEach((t) => {
+    const ss = t.startSteps || [], bs = t.bakeSteps || [];
+    if (coldMode !== "narijs" || t.retard !== true) { splitOf[t.id] = { pre: ss, post: bs, retarded: false }; return; }
+    const fi = ss.findIndex((s) => s.act === "fridge");
+    const warm = fi >= 0 ? ss.slice(0, fi) : ss.slice();
+    const fridge = fi >= 0 ? ss[fi] : null;
+    const bi = bs.findIndex((s) => s.bake);
+    const ti = bs.findIndex((s) => s.act === "take");
+    const mid = bs.slice(ti >= 0 ? ti + 1 : 0, bi < 0 ? bs.length : bi);
+    const moved = mid.filter((s) => !s.preBake).map((s, i, arr) => (i === arr.length - 1 ? { ...s, gap: 0 } : s));
+    const stay = mid.filter((s) => s.preBake);
+    const post = [...stay, ...(bi >= 0 ? bs.slice(bi) : [])];
+    splitOf[t.id] = { pre: [...warm, ...moved, ...(fridge ? [fridge] : [])], post, retarded: true };
+  });
+  const preOf = (t) => (splitOf[t.id] ? splitOf[t.id].pre : (t.startSteps || []));
+  const postOf = (t) => (splitOf[t.id] ? splitOf[t.id].post : (t.bakeSteps || []));
+  const chainTimes = (t, which) => chainOf(which === "startSteps" ? preOf(t) : postOf(t));
 
   // bundelen: hele keten schuift, max ±30 min
   const shifts = {};
@@ -417,45 +734,125 @@ export default function BakeSchedule() {
   const startMin = round15(parseT(startStr));
   const bakeStart = round15(parseT(bakeStr));
 
-  // bakstappen sequentieel (één oven)
-  const readies = active.map((t) => {
+  // ── Planning op een absolute tijdas ──────────────────────────────────
+  // Dag 0 is de ankerdag. sAbs = start van de voorbereidingsketen,
+  // pAbs = start van de bakdag-keten. Welke dag vastligt hangt af van
+  // startMode: "tegelijk" (start én bakdag vast), "bakdag" (alles bakt op
+  // één dag, voorbereiden verspreid) of "startdag" (alles op één dag
+  // voorbereiden, bakken verspreid).
+  const warmTotalOf = (t) => { const c = chainTimes(t, "startSteps"); return c.length ? c[c.length - 1].off : 0; };
+  const postTotalOf = (t) => { const c = chainTimes(t, "bakeSteps"); if (!c.length) return 0; const l = c[c.length - 1]; return l.off + (l.st.bake ? (l.st.dur || 30) : 0); };
+  const coldIdealOf = (t) => (t.coldIdeal || 16) * 60;
+  const optimal = startMode === "bakdag" || startMode === "startdag";
+
+  const sAbs = {}, pAbs = {};
+  let anchorWeekday = startDayIdx;
+  if (startMode === "startdag") {
+    active.forEach((t) => {
+      sAbs[t.id] = startMin;
+      const raw = startMin + warmTotalOf(t) + coldIdealOf(t);
+      let d = Math.floor(raw / 1440); let mod = round15(raw % 1440);
+      const latest = Math.max(420, Math.min(1140, 1290 - postTotalOf(t))); // uiterlijk ~21:30 klaar
+      if (mod < 420) mod = 420;    // niet vóór 07:00 uit de koeling
+      if (mod > latest) mod = latest;
+      pAbs[t.id] = d * 1440 + mod;
+    });
+  } else if (startMode === "bakdag") {
+    const db = {};
+    active.forEach((t) => { db[t.id] = Math.max(1, Math.ceil((coldIdealOf(t) + warmTotalOf(t) - bakeStart) / 1440)); });
+    const D = active.length ? Math.max(...active.map((t) => db[t.id])) : Math.max(1, dayGap);
+    anchorWeekday = (((bakeDayIdx - D) % 7) + 7) % 7;
+    active.forEach((t) => {
+      const warm = warmTotalOf(t);
+      let mod = round15(bakeStart - coldIdealOf(t) - warm + db[t.id] * 1440);
+      if (mod < 480) mod = 480;                                 // niet vóór 08:00 beginnen
+      if (mod + warm > 1380) mod = Math.max(480, 1380 - warm);  // en vóór 23:00 de koeling in
+      sAbs[t.id] = (D - db[t.id]) * 1440 + mod;
+      pAbs[t.id] = D * 1440 + bakeStart;
+    });
+  } else {
+    const D = Math.max(1, dayGap);
+    active.forEach((t) => { sAbs[t.id] = startMin; pAbs[t.id] = D * 1440 + bakeStart; });
+  }
+  const wd = (d) => (((anchorWeekday + d) % 7) + 7) % 7;
+  const startDayNum = (t) => Math.floor((sAbs[t.id] || 0) / 1440);
+  const bakeDayNum = (t) => Math.floor((pAbs[t.id] || 0) / 1440);
+
+  // Bakstappen. Pan-baksels (naan, Griekse pita) bezetten de oven niet en
+  // lopen door. Ovenbaksels gaan per bakdag één voor één, strikt van heet
+  // naar koud: één keer voorverwarmen op de hoogste stand, daarna zakken.
+  const bakeJobs = active.map((t) => {
     const chain = chainTimes(t, "bakeSteps");
-    const bakeIdx = chain.findIndex((x) => x.st.bake);
-    if (bakeIdx < 0) return null;
-    return { id: t.id, ready: chain[bakeIdx].off + (shifts[t.id] || 0), dur: chain[bakeIdx].st.dur || 30, stepId: chain[bakeIdx].st.id };
-  }).filter(Boolean).sort((a, b) => a.ready - b.ready);
-  const seq = {}; let cursor = null;
-  readies.forEach((r) => { const st = cursor == null ? r.ready : Math.max(r.ready, cursor); seq[r.id] = st; cursor = st + r.dur; });
-  const finishOff = cursor;
+    const bi = chain.findIndex((x) => x.st.bake);
+    if (bi < 0) return null;
+    return { id: t.id, label: t.label, off: chain[bi].off + (shifts[t.id] || 0),
+             dur: chain[bi].st.dur || 30, temp: t.bakeTemp || 220, oven: t.oven !== false };
+  }).filter(Boolean);
+
+  const bakeAbs = {}; let forcedWait = 0;
+  {
+    const byDay = {};
+    bakeJobs.forEach((j) => { const d = bakeDayNum({ id: j.id }); (byDay[d] = byDay[d] || []).push(j); });
+    Object.keys(byDay).forEach((dk) => {
+      const group = byDay[dk];
+      group.filter((j) => !j.oven).forEach((j) => { bakeAbs[j.id] = pAbs[j.id] + j.off; });
+      const ov = group.filter((j) => j.oven)
+        .sort((a, b) => b.temp - a.temp || (pAbs[a.id] + a.off) - (pAbs[b.id] + b.off));
+      let cur = null;
+      ov.forEach((j) => {
+        const ready = pAbs[j.id] + j.off;
+        if (cur == null) { bakeAbs[j.id] = ready; cur = ready + j.dur; return; }
+        if (optimal) { const delta = Math.max(0, cur - ready); pAbs[j.id] += delta; bakeAbs[j.id] = ready + delta; }
+        else { bakeAbs[j.id] = Math.max(ready, cur); forcedWait = Math.max(forcedWait, bakeAbs[j.id] - ready); }
+        cur = bakeAbs[j.id] + j.dur;
+      });
+    });
+  }
+
+  const ovenInfo = {};
+  Array.from(new Set(bakeJobs.map((j) => bakeDayNum({ id: j.id })))).forEach((d) => {
+    const all = bakeJobs.filter((j) => bakeDayNum({ id: j.id }) === d);
+    const ov = all.filter((j) => j.oven);
+    ovenInfo[d] = {
+      earliest: ov.length ? Math.min(...ov.map((j) => bakeAbs[j.id])) : null,
+      peak: ov.length ? Math.max(...ov.map((j) => j.temp)) : null,
+      order: ov.slice().sort((a, b) => bakeAbs[a.id] - bakeAbs[b.id])
+               .map((j) => `${fmt(bakeAbs[j.id])} · ${j.label} · ${j.temp} °C`),
+      finish: all.length ? Math.max(...all.map((j) => bakeAbs[j.id] + j.dur)) : null,
+    };
+  });
   const laneFinish = {};
-  readies.forEach((r) => { laneFinish[r.id] = fmt(bakeStart + seq[r.id] + r.dur); });
-  const earliestOven = readies.length ? Math.min(...readies.map((r) => seq[r.id])) : null;
+  bakeJobs.forEach((j) => { laneFinish[j.id] = fmt(bakeAbs[j.id] + j.dur); });
+  const lastFinish = bakeJobs.length ? Math.max(...bakeJobs.map((j) => bakeAbs[j.id] + j.dur)) : null;
+  const finishTime = lastFinish != null ? fmt(lastFinish) : null;
+  const finishWd = lastFinish != null ? wd(Math.floor(lastFinish / 1440)) : bakeDayIdx;
+  const readies = bakeJobs.filter((j) => j.oven);
 
   const offOf = (t, which, stepId) => {
     const chain = chainTimes(t, which);
     const hit = chain.find((x) => x.st.id === stepId);
     if (!hit) return 0;
     if (which === "bakeSteps") {
-      if (hit.st.bake) return seq[t.id] != null ? seq[t.id] : hit.off + (shifts[t.id] || 0);
+      if (hit.st.bake) return bakeAbs[t.id] != null ? bakeAbs[t.id] - pAbs[t.id] : hit.off + (shifts[t.id] || 0);
       return hit.off + (shifts[t.id] || 0);
     }
     return hit.off;
   };
+  const baseAbsOf = (t, isBake) => (isBake ? pAbs[t.id] : sAbs[t.id]) || 0;
 
-  const lastStartOff = Math.max(0, ...active.map((t) => { const c = chainTimes(t, "startSteps"); return c.length ? c[c.length - 1].off : 0; }));
-  const coldBulk = (1440 - (startMin + lastStartOff)) + (nights - 1) * 1440 + bakeStart;
+  const coldOf = (t) => (pAbs[t.id] || 0) - ((sAbs[t.id] || 0) + warmTotalOf(t));
+  const coldBulk = active.length ? Math.max(...active.map(coldOf)) : (Math.max(1, dayGap) * 1440 + bakeStart - startMin);
   const bulkH = Math.floor(coldBulk / 60), bulkM = coldBulk % 60;
   const bulkLabel = `${bulkH} u${bulkM ? " " + bulkM + " min" : ""}`;
-  const finishTime = finishOff != null ? fmt(bakeStart + finishOff) : null;
-  const levOf = (t) => (nights >= 2 ? (t.levainMulti || t.levain) : t.levain);
+  const levOf = (t) => (coldOf(t) >= 1800 ? (t.levainMulti || t.levain) : t.levain);
 
   // voortgang
   const instanceKeys = [];
   shown.forEach((t) => {
-    (t.startSteps || []).forEach((st) => instanceKeys.push(`${t.id}:${st.id}`));
-    (t.bakeSteps || []).forEach((st) => instanceKeys.push(`${t.id}:${st.id}`));
+    preOf(t).forEach((st) => instanceKeys.push(`${t.id}:${st.id}`));
+    postOf(t).forEach((st) => instanceKeys.push(`${t.id}:${st.id}`));
   });
-  if (readies.length) instanceKeys.push("oven");
+  Object.keys(ovenInfo).forEach((d) => { if (ovenInfo[d].earliest != null) instanceKeys.push("oven" + d); });
   const total = instanceKeys.length;
   const doneCount = instanceKeys.filter((kk) => done[kk]).length;
   const pct = total ? Math.round((doneCount / total) * 100) : 0;
@@ -586,12 +983,12 @@ export default function BakeSchedule() {
     </div>
   );
 
-  const renderCard = (t, which, st) => {
+  const renderCard = (t, which, st, atOverride) => {
     const key = `${t.id}:${st.id}`;
     const isDone = !!done[key];
     const isOpen = !!openInfo[key];
     const isStart = which === "startSteps";
-    const at = (isStart ? startMin : bakeStart) + offOf(t, which, st.id);
+    const at = atOverride != null ? atOverride : baseAbsOf(t, !isStart) + offOf(t, which, st.id);
     const act = st.bake ? "bake" : st.act;
     return (
       <div className={"card" + (isDone ? " done" : "") + (st.bake ? " bake" : "") + (isOpen ? " open" : "")}
@@ -674,11 +1071,12 @@ export default function BakeSchedule() {
     );
   };
 
-  const renderOven = () => {
-    const key = "oven";
+  const renderOven = (d) => {
+    const key = "oven" + d;
     const isDone = !!done[key];
     const isOpen = !!openInfo[key];
-    const at = bakeStart + (earliestOven != null ? earliestOven - 60 : 0);
+    const info = ovenInfo[d] || {};
+    const at = (info.earliest != null ? info.earliest : 0) - 60;
     return (
       <div className={"card" + (isDone ? " done" : "") + (isOpen ? " open" : "")}
         role="button" tabIndex={0} onClick={() => toggle(key)}
@@ -694,33 +1092,43 @@ export default function BakeSchedule() {
             <span className="time">{fmt(at)}</span>
             <span className="badge" style={{ background: "#EDE7DB", color: "#8C7B63" }}>Alle</span>
           </div>
-          <div className="title">{OVEN_STEP.title}</div>
+          <div className="title">{OVEN_STEP.title}{info.peak ? ` ${info.peak} °C` : ""}</div>
           {isOpen && <div className="note">{OVEN_STEP.note}</div>}
+          {isOpen && (info.order || []).length > 1 && (
+            <div className="ingtree">
+              <div className="ggroup">
+                <div className="ghead"><span className="gname">Ovenvolgorde — heet naar koud</span></div>
+                <ul className="glist">{info.order.map((l, i) => <li key={i}><span>{l}</span></li>)}</ul>
+              </div>
+            </div>
+          )}
           {isOpen && <div className="detail" style={{ background: "#EDE7DB", borderColor: "#8C7B63" }}>{OVEN_STEP.detail}</div>}
         </div>
       </div>
     );
   };
 
-  const renderDay = (which, label, sub, dayIdx) => {
+  const renderDay = (which, sub, dayIdx, sectionKey, laneList, dayNum) => {
     if (!shown.length) return null;
-    const lanes = shown.filter((t) => (t[which] || []).length > 0);
+    const lanes = laneList || shown.filter((t) => (which === "startSteps" ? preOf(t) : postOf(t)).length > 0);
     if (!lanes.length) return null;
     const nLanes = lanes.length;
-    const laneMode = nLanes >= 1;
     const isBake = which === "bakeSteps";
+    const info = (isBake && dayNum != null) ? (ovenInfo[dayNum] || {}) : {};
+    const baseOf = (t) => baseAbsOf(t, isBake);
 
     const events = [];
     lanes.forEach((t, ci) => {
-      const chain = t[which] || [];
+      const chain = isBake ? postOf(t) : preOf(t);
+      const base = baseOf(t);
       chain.forEach((st, i) => {
-        const off = offOf(t, which, st.id);
-        events.push({ time: off, col: ci + 1, kind: "step", t, st });
+        const at = base + offOf(t, which, st.id);
+        events.push({ time: at, col: ci + 1, kind: "step", t, st, at });
         const nx = chain[i + 1];
-        if (nx) { const gap = offOf(t, which, nx.id) - off; if (gap >= 15) events.push({ time: off + 0.5, col: ci + 1, kind: "wait", gap }); }
+        if (nx) { const gap = (base + offOf(t, which, nx.id)) - at; if (gap >= 15) events.push({ time: at + 0.5, col: ci + 1, kind: "wait", gap }); }
       });
     });
-    if (isBake && earliestOven != null) events.push({ time: earliestOven - 60, full: true, kind: "oven" });
+    if (isBake && info.earliest != null) events.push({ time: info.earliest - 60, full: true, kind: "oven" });
     events.sort((a, b) => a.time - b.time);
 
     const placed = []; let row = 1, i2 = 0;
@@ -734,15 +1142,16 @@ export default function BakeSchedule() {
     const finishRow = row + 1, eatRow = row + 2;
 
     const dayKeys = [];
-    lanes.forEach((t) => (t[which] || []).forEach((st) => dayKeys.push(`${t.id}:${st.id}`)));
-    if (isBake && readies.length) dayKeys.push("oven");
+    lanes.forEach((t) => (isBake ? postOf(t) : preOf(t)).forEach((st) => dayKeys.push(`${t.id}:${st.id}`)));
+    if (isBake && info.earliest != null) dayKeys.push("oven" + dayNum);
     const dayAllDone = dayKeys.length > 0 && dayKeys.every((kk) => done[kk]);
-    const collapsed = dayAllDone && !!collapsedDays[which];
+    const sk = sectionKey || which;
+    const collapsed = dayAllDone && !!collapsedDays[sk];
 
     return (
-      <section className="day">
+      <section className="day" key={sk}>
         <div className={"dayhead" + (dayAllDone ? " isdone" : "")}
-          onClick={dayAllDone ? () => setCollapsedDays((c) => ({ ...c, [which]: !c[which] })) : undefined}
+          onClick={dayAllDone ? () => setCollapsedDays((c) => ({ ...c, [sk]: !c[sk] })) : undefined}
           role={dayAllDone ? "button" : undefined} tabIndex={dayAllDone ? 0 : undefined}>
           <span className="dayname">{cap(WEEKDAYS[dayIdx])}</span>
           <span className="daysub">{sub}</span>
@@ -756,21 +1165,21 @@ export default function BakeSchedule() {
             <div className="daylanes" style={{ gridTemplateColumns: `repeat(${nLanes}, 1fr)` }}>
               {lanes.map((t, i) => <span key={"sp" + t.id} className="colspine" style={{ gridColumn: i + 1, gridRow: `1 / ${finishRow + 1}`, color: t.node }} />)}
               {placed.map((e, idx) => {
-                if (e.kind === "oven") return <div key={idx} className="sharedwrap" style={{ gridColumn: "1 / -1", gridRow: e.row }}>{renderOven()}</div>;
+                if (e.kind === "oven") return <div key={idx} className="sharedwrap" style={{ gridColumn: "1 / -1", gridRow: e.row }}>{renderOven(dayNum)}</div>;
                 if (e.kind === "wait") return <div key={idx} className="lanewaitrow" style={{ gridColumn: e.col, gridRow: e.row }}><span className="lanewaitpill"><ClockIcon />{fmtDur(e.gap)}</span></div>;
                 const open = !!openInfo[`${e.t.id}:${e.st.id}`];
-                return <div key={idx} style={{ gridColumn: open ? "1 / -1" : e.col, gridRow: e.row, zIndex: open ? 6 : 1, minWidth: 0 }}>{renderCard(e.t, which, e.st)}</div>;
+                return <div key={idx} style={{ gridColumn: open ? "1 / -1" : e.col, gridRow: e.row, zIndex: open ? 6 : 1, minWidth: 0 }}>{renderCard(e.t, which, e.st, e.at)}</div>;
               })}
               {isBake && lanes.map((t, i) => laneFinish[t.id] ? (
                 <div key={"lf" + t.id} className="lanefinish" style={{ gridColumn: i + 1, gridRow: finishRow, color: t.ink }}>✓ klaar {laneFinish[t.id]}</div>
               ) : null)}
-              {!isBake && (
-                <div className="lanewaitrow full" style={{ gridColumn: "1 / -1", gridRow: finishRow }}>
-                  <span className="lanewaitpill big"><ClockIcon />{bulkLabel} koude bulk → bakdag</span>
+              {!isBake && lanes.map((t, i) => (
+                <div key={"cold" + t.id} className="lanewaitrow koud" style={{ gridColumn: i + 1, gridRow: finishRow }}>
+                  <span className="lanewaitpill big"><ClockIcon />{fmtDur(coldOf(t))} koud</span>
                 </div>
-              )}
-              {isBake && finishTime && (
-                <div className="eatrow" style={{ gridColumn: "1 / -1", gridRow: eatRow }}>Eet smakelijk!<span className="eatsub">alles klaar om {finishTime}</span></div>
+              ))}
+              {isBake && info.finish != null && (
+                <div className="eatrow" style={{ gridColumn: "1 / -1", gridRow: eatRow }}>Eet smakelijk!<span className="eatsub">klaar om {fmt(info.finish)}</span></div>
               )}
             </div>
           </>
@@ -795,7 +1204,7 @@ export default function BakeSchedule() {
         <h1>Bakschema</h1>
         <p className="lede">
           Start <b>{cap(WEEKDAYS[startDayIdx])} {fmt(startMin)}</b> · koude bulk ~{bulkLabel}
-          {finishTime && <> · klaar <b>{cap(WEEKDAYS[bakeDayIdx])} ~{finishTime}</b></>}
+          {finishTime && <> · klaar <b>{cap(WEEKDAYS[finishWd])} ~{finishTime}</b></>}
         </p>
       </header>
 
@@ -998,6 +1407,39 @@ export default function BakeSchedule() {
         </div>
 
         <div className="ctl ctlwide">
+          <span className="ctllabel">Koude fase</span>
+          <div className="seg">
+            <button className={"segbtn" + (coldMode === "bulk" ? " on" : "")} onClick={() => setColdMode("bulk")}>
+              Tijdens de bulk<small>vormen op de bakdag</small>
+            </button>
+            <button className={"segbtn" + (coldMode === "narijs" ? " on" : "")} onClick={() => setColdMode("narijs")}>
+              Na het vormen<small>bakdag = alleen oven</small>
+            </button>
+          </div>
+          {coldMode === "narijs" && active.some((t) => t.retard !== true) && (
+            <span className="ctlhint">Niet mogelijk voor {active.filter((t) => t.retard !== true).map((t) => t.label).join(", ")} — verrijkt en plat deeg wil een warme narijs. Die houden hun eigen schema.</span>
+          )}
+        </div>
+        <div className="ctl ctlwide">
+          <span className="ctllabel">Planning</span>
+          <div className="seg seg3">
+            <button className={"segbtn" + (startMode === "tegelijk" ? " on" : "")} onClick={() => setStartMode("tegelijk")}>
+              Alles tegelijk<small>1 startdag · 1 bakdag</small>
+            </button>
+            <button className={"segbtn" + (startMode === "bakdag" ? " on" : "")} onClick={() => setStartMode("bakdag")}>
+              Eén bakdag<small>rijstijd optimaal</small>
+            </button>
+            <button className={"segbtn" + (startMode === "startdag" ? " on" : "")} onClick={() => setStartMode("startdag")}>
+              Eén startdag<small>rijstijd optimaal</small>
+            </button>
+          </div>
+          {optimal && active.length > 0 && (
+            <span className="ctlhint">
+              {active.map((t) => `${t.label}: ${cap(WEEKDAYS[wd(startDayNum(t))])} ${fmt(sAbs[t.id])} → bakken ${cap(WEEKDAYS[wd(bakeDayNum(t))])} · ${fmtDur(coldOf(t))} koud`).join(" · ")}
+            </span>
+          )}
+        </div>
+        <div className="ctl ctlwide">
           <span className="ctllabel">Taken bundelen</span>
           <button className={"notifbtn" + (bundle ? " on" : "")} onClick={() => setBundle((v) => !v)}>
             {bundle ? "Aan — stappen samengevoegd tot momenten" : "Uit — elk deeg volgt z'n eigen tijden"}
@@ -1014,6 +1456,12 @@ export default function BakeSchedule() {
         <div className="info">{nights} nachten koud (~{bulkLabel}) = flink zuurder. Levain automatisch verlaagd — zet de koelkast op 3–4 °C.</div>
       )}
       {dayGap === 0 && <div className="warn">Bakdag is gelijk aan de startdag — kies een latere bakdag voor een koude bulk overnacht.</div>}
+      {forcedWait >= 45 && (
+        <div className="warn">
+          De oven gaat van heet naar koud, waardoor een baksel {fmtDur(forcedWait)} moet wachten tot de oven vrij is — risico op overrijzen.
+          Zet <b>Planning</b> op “één bakdag”, dan schuift dat deeg mee en staat het niet te wachten.
+        </div>
+      )}
 
       <div className="progress">
         <div className="bar"><span style={{ width: `${pct}%` }} /></div>
@@ -1135,8 +1583,26 @@ export default function BakeSchedule() {
         </div>
       )}
 
-      {renderDay("startSteps", "start", "MENGEN → KOELKAST", startDayIdx)}
-      {renderDay("bakeSteps", "bake", "VORMEN → BAKKEN", bakeDayIdx)}
+      {(() => {
+        const groups = {};
+        shown.filter((t) => preOf(t).length).forEach((t) => {
+          const d = startDayNum(t);
+          (groups[d] = groups[d] || []).push(t);
+        });
+        const days = Object.keys(groups).map(Number).sort((a, b) => a - b);
+        const sub = coldMode === "narijs" ? "MENGEN → VORMEN → KOELKAST" : "MENGEN → KOELKAST";
+        return days.map((d) => renderDay("startSteps", sub, wd(d), "pre" + d, groups[d], d));
+      })()}
+      {(() => {
+        const groups = {};
+        shown.filter((t) => postOf(t).length).forEach((t) => {
+          const d = bakeDayNum(t);
+          (groups[d] = groups[d] || []).push(t);
+        });
+        const days = Object.keys(groups).map(Number).sort((a, b) => a - b);
+        const sub = coldMode === "narijs" ? "UIT DE KOELING → OVEN" : "VORMEN → BAKKEN";
+        return days.map((d) => renderDay("bakeSteps", sub, wd(d), "post" + d, groups[d], d));
+      })()}
     </div>
   );
 }
@@ -1313,6 +1779,15 @@ h1 { font-family:'Fraunces',serif; font-weight:600; font-size:30px; margin:0 0 4
 .lanewaitrow.full::before { display:none; }
 .lanewaitpill { display:inline-flex; align-items:center; font-family:'Space Mono',monospace; font-size:11px; color:var(--muted); background:var(--paper); border:1px dashed var(--line); border-radius:20px; padding:3px 10px; }
 .lanewaitpill.big { font-weight:700; color:var(--ink); border-style:solid; background:var(--card); }
+.lanewaitrow.koud { display:flex; justify-content:center; padding-left:0; }
+.lanewaitrow.koud::before { display:none; }
+.seg { display:flex; gap:6px; }
+.seg3 .segbtn { font-size:12px; padding:8px 4px; }
+.seg3 .segbtn small { font-size:9px; }
+.segbtn { flex:1; display:flex; flex-direction:column; align-items:center; gap:2px; font:inherit; font-size:13px; font-weight:600; color:var(--ink); background:var(--paper); border:1px solid var(--line); border-radius:10px; padding:8px 6px; cursor:pointer; line-height:1.25; }
+.segbtn small { font-family:'Space Mono',monospace; font-size:9.5px; font-weight:400; letter-spacing:.03em; text-transform:uppercase; color:var(--muted); }
+.segbtn.on { background:var(--ink); border-color:var(--ink); color:#fff; }
+.segbtn.on small { color:rgba(255,255,255,.7); }
 .lanefinish { font-family:'Space Mono',monospace; font-size:11px; font-weight:700; text-align:center; padding:5px 4px; border-radius:8px; background:var(--card); border:1px solid var(--line); }
 .eatrow { display:flex; flex-direction:column; align-items:center; font-family:'Fraunces',serif; font-weight:600; font-size:20px; padding:16px 0 4px; }
 .eatsub { font-family:'Space Mono',monospace; font-weight:400; font-size:11px; text-transform:uppercase; color:var(--muted); margin-top:3px; }
